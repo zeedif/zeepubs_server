@@ -84,13 +84,13 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<AuthSuccess> signUp({required SignUpCommand request, required AuthStrategy strategy}) async {
     // 1. Validar configuración de registro público
     if (request.email != null && !_config.publicEmailSignupEnabled) {
-      throw PublicSignupDisabledException();
+      throw const PublicSignupDisabledException();
     }
     if (request.email == null && !_config.publicPasswordOnlySignupEnabled) {
-      throw PublicSignupDisabledException();
+      throw const PublicSignupDisabledException();
     }
     if (request.email == null && request.password == null) {
-      throw RegistrationCredentialsRequiredException();
+      throw const RegistrationCredentialsRequiredException();
     }
 
     // 2. Crear entidades de usuario
@@ -104,7 +104,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     // 3. Evaluar verificación de correo
     if (_config.requireEmailVerification && request.email != null) {
       await _startEmailVerificationInternal(authUserId: newUser.id);
-      throw EmailVerificationRequiredException();
+      throw const EmailVerificationRequiredException();
     } else {
       // 4. Retornar token
       return await _createToken(newUser.id, 'classic_signup', newUser.scopes, strategy);
@@ -137,8 +137,8 @@ class AuthRepositoryImpl implements IAuthRepository {
     ).getSingleOrNull();
 
     if (existing != null) {
-      if (existing.username.toLowerCase() == username.toLowerCase()) throw UsernameAlreadyInUseException();
-      if (existing.email == normalizedEmail) throw EmailAlreadyInUseException();
+      if (existing.username.toLowerCase() == username.toLowerCase()) throw const UsernameAlreadyInUseException();
+      if (existing.email == normalizedEmail) throw const EmailAlreadyInUseException();
     }
 
     String? passwordHash, passwordSalt;
@@ -175,7 +175,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     ).getSingleOrNull();
 
     if (user == null || user.passwordHash == null || user.passwordSalt == null) {
-      throw InvalidCredentialsException();
+      throw const InvalidCredentialsException();
     }
 
     // 1. Validar Fuerza Bruta (Lockout activo)
@@ -207,7 +207,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       if (shouldLock) {
         throw AccountLockedException(lockUntilTime!);
       }
-      throw InvalidCredentialsException();
+      throw const InvalidCredentialsException();
     }
 
     // 3. Login exitoso -> Limpiar contadores de intentos fallidos
@@ -220,17 +220,17 @@ class AuthRepositoryImpl implements IAuthRepository {
 
     if (_config.requireEmailVerification && user.email != null && user.emailVerifiedAt == null) {
       await _startEmailVerificationInternal(authUserId: user.id);
-      throw EmailVerificationRequiredException();
+      throw const EmailVerificationRequiredException();
     }
 
-    if (user.blocked) throw AuthUserBlockedException();
+    if (user.blocked) throw const AuthUserBlockedException();
 
     return await _createToken(user.id, 'classic_signin', user.scopes, strategy);
   }
 
   @override
   Future<void> startEmailOtpSignIn({required StartEmailOtpSignInCommand request}) async {
-    if (!_config.allowEmailOtpSignIn) throw OtpSignInDisabledException();
+    if (!_config.allowEmailOtpSignIn) throw const OtpSignInDisabledException();
 
     final normalizedEmail = request.email.toLowerCase();
     final user = await (_db.select(_db.authUsers)..where((u) => u.email.equals(normalizedEmail))).getSingleOrNull();
@@ -261,7 +261,7 @@ class AuthRepositoryImpl implements IAuthRepository {
 
     if (otpRequest == null || otpRequest.expiresAt.isBefore(DateTime.now().toUtc())) {
       if (otpRequest != null) await (_db.delete(_db.emailOtpRequests)..where((r) => r.id.equals(otpRequest.id))).go();
-      throw VerificationException();
+      throw const VerificationException();
     }
 
     final isValid = await _security.validateEmailOtp(
@@ -273,11 +273,11 @@ class AuthRepositoryImpl implements IAuthRepository {
     // Consumir el OTP siempre para que no se reutilice
     await (_db.delete(_db.emailOtpRequests)..where((r) => r.id.equals(otpRequest.id))).go();
 
-    if (!isValid) throw VerificationException();
+    if (!isValid) throw const VerificationException();
 
     final user = await (_db.select(_db.authUsers)..where((u) => u.email.equals(normalizedEmail))).getSingleOrNull();
-    if (user == null) throw UserNotFoundException();
-    if (user.blocked) throw AuthUserBlockedException();
+    if (user == null) throw const UserNotFoundException();
+    if (user.blocked) throw const AuthUserBlockedException();
 
     // Si inició sesión con correo, lo damos por verificado
     if (user.emailVerifiedAt == null) {
@@ -291,8 +291,8 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<AuthSuccess> signInWithOidc({required SignInWithOidcCommand request}) async {
-    if (_oidcHandler == null) throw OidcNotConfiguredException();
-    if (!_config.allowOidcSignIn) throw OidcSignInDisabledException();
+    if (_oidcHandler == null) throw const OidcNotConfiguredException();
+    if (!_config.allowOidcSignIn) throw const OidcSignInDisabledException();
 
     final oidcAccount = await (_db.select(_db.oidcAccounts)
           ..where((o) => o.issuer.equals(request.issuer) & o.subject.equals(request.subject)))
@@ -303,10 +303,10 @@ class AuthRepositoryImpl implements IAuthRepository {
     if (oidcAccount != null) {
       userId = oidcAccount.userId;
       final user = await (_db.select(_db.authUsers)..where((u) => u.id.equals(userId))).getSingleOrNull();
-      if (user == null) throw OidcUserNotFoundException();
-      if (user.blocked) throw AuthUserBlockedException();
+      if (user == null) throw const OidcUserNotFoundException();
+      if (user.blocked) throw const AuthUserBlockedException();
     } else {
-      if (!_config.allowOidcSignup) throw OidcSignupDisabledException();
+      if (!_config.allowOidcSignup) throw const OidcSignupDisabledException();
 
       AuthUser? user;
       if (request.email != null) {
@@ -354,8 +354,8 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<Fido2ChallengeResponse> generateFido2RegistrationChallenge({required GenerateFido2RegistrationChallengeQuery request}) async {
-    if (_fido2Handler == null) throw Fido2NotConfiguredException();
-    if (!_config.allowPasskeyRegistration) throw PasskeyRegistrationDisabledException();
+    if (_fido2Handler == null) throw const Fido2NotConfiguredException();
+    if (!_config.allowPasskeyRegistration) throw const PasskeyRegistrationDisabledException();
 
     final options = _fido2Handler.generateRegistrationOptions(
       username: request.username,
@@ -371,18 +371,18 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<void> finishFido2Registration({required FinishFido2RegistrationCommand request}) async {
-    if (_fido2Handler == null) throw Fido2NotConfiguredException();
+    if (_fido2Handler == null) throw const Fido2NotConfiguredException();
 
     final storedChallenge = await (_db.select(_db.passkeyChallenges)..where((c) => c.id.equals(request.challengeId))).getSingleOrNull();
 
     if (storedChallenge == null || storedChallenge.createdAt.isBefore(DateTime.now().toUtc().subtract(const Duration(minutes: 5)))) {
       if (storedChallenge != null) await (_db.delete(_db.passkeyChallenges)..where((c) => c.id.equals(storedChallenge.id))).go();
-      throw ExpiredOrInvalidChallengeException();
+      throw const ExpiredOrInvalidChallengeException();
     }
 
     final session = locator<AppSession>();
     final userId = session.authenticated?.userId;
-    if (userId == null) throw AccessDeniedException();
+    if (userId == null) throw const AccessDeniedException();
 
     final regResult = _fido2Handler.completeRegistration(
       clientDataBase64: request.clientDataJSON,
@@ -405,7 +405,7 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<Fido2ChallengeResponse> generateFido2AuthenticationChallenge() async {
-    if (_fido2Handler == null) throw Fido2NotConfiguredException();
+    if (_fido2Handler == null) throw const Fido2NotConfiguredException();
 
     final options = _fido2Handler.generateAuthenticationOptions();
     final challenge = options['challenge'] as String;
@@ -421,15 +421,15 @@ class AuthRepositoryImpl implements IAuthRepository {
     required FinishFido2AuthenticationCommand request,
     required AuthStrategy strategy,
   }) async {
-    if (_fido2Handler == null) throw Fido2NotConfiguredException();
+    if (_fido2Handler == null) throw const Fido2NotConfiguredException();
 
     final passkey = await (_db.select(_db.passkeyAccounts)..where((p) => p.credentialIdBase64.equals(request.credentialId))).getSingleOrNull();
-    if (passkey == null) throw InvalidCredentialsException();
+    if (passkey == null) throw const InvalidCredentialsException();
 
     final storedChallenge = await (_db.select(_db.passkeyChallenges)..where((c) => c.id.equals(request.challengeId))).getSingleOrNull();
     if (storedChallenge == null || storedChallenge.createdAt.isBefore(DateTime.now().toUtc().subtract(const Duration(minutes: 5)))) {
       if (storedChallenge != null) await (_db.delete(_db.passkeyChallenges)..where((c) => c.id.equals(storedChallenge.id))).go();
-      throw ExpiredOrInvalidChallengeException();
+      throw const ExpiredOrInvalidChallengeException();
     }
 
     final verification = await _fido2Handler.completeAuthentication(
@@ -447,7 +447,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     await (_db.delete(_db.passkeyChallenges)..where((c) => c.id.equals(storedChallenge.id))).go();
 
     final user = await (_db.select(_db.authUsers)..where((u) => u.id.equals(passkey.userId))).getSingle();
-    if (user.blocked) throw AuthUserBlockedException();
+    if (user.blocked) throw const AuthUserBlockedException();
 
     return await _createToken(user.id, 'passkey', user.scopes, strategy);
   }
@@ -482,7 +482,7 @@ class AuthRepositoryImpl implements IAuthRepository {
 
     if (resetRequest == null || resetRequest.expiresAt.isBefore(DateTime.now().toUtc())) {
       if (resetRequest != null) await (_db.delete(_db.passwordResetRequests)..where((r) => r.id.equals(resetRequest.id))).go();
-      throw VerificationException();
+      throw const VerificationException();
     }
 
     final isValid = await _security.validatePasswordResetCode(
@@ -493,7 +493,7 @@ class AuthRepositoryImpl implements IAuthRepository {
 
     await (_db.delete(_db.passwordResetRequests)..where((r) => r.id.equals(resetRequest.id))).go();
 
-    if (!isValid) throw VerificationException();
+    if (!isValid) throw const VerificationException();
 
     // Cambiar contraseña real
     final hashResult = await _security.createPasswordHash(request.newPassword);
@@ -513,7 +513,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   @override
   Future<void> forcePasswordChange({required UuidValue authUserId, required String newPassword}) async {
     final user = await (_db.select(_db.authUsers)..where((u) => u.id.equals(authUserId))).getSingleOrNull();
-    if (user == null) throw UserNotFoundException();
+    if (user == null) throw const UserNotFoundException();
 
     final hashResult = await _security.createPasswordHash(newPassword);
 
@@ -530,7 +530,7 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   Future<void> _startEmailVerificationInternal({required UuidValue authUserId}) async {
     final user = await (_db.select(_db.authUsers)..where((u) => u.id.equals(authUserId))).getSingleOrNull();
-    if (user?.email == null) throw NoEmailToVerifyException();
+    if (user?.email == null) throw const NoEmailToVerifyException();
 
     await (_db.delete(_db.emailVerificationRequests)..where((r) => r.userId.equals(authUserId))).go();
 
@@ -553,7 +553,7 @@ class AuthRepositoryImpl implements IAuthRepository {
 
     if (verificationRequest == null || verificationRequest.expiresAt.isBefore(DateTime.now().toUtc())) {
       if (verificationRequest != null) await (_db.delete(_db.emailVerificationRequests)..where((r) => r.id.equals(verificationRequest.id))).go();
-      throw VerificationException();
+      throw const VerificationException();
     }
 
     final isValid = await _security.validateEmailVerificationCode(
@@ -564,7 +564,7 @@ class AuthRepositoryImpl implements IAuthRepository {
 
     await (_db.delete(_db.emailVerificationRequests)..where((r) => r.id.equals(verificationRequest.id))).go();
 
-    if (!isValid) throw VerificationException();
+    if (!isValid) throw const VerificationException();
 
     await (_db.update(_db.authUsers)..where((u) => u.id.equals(verificationRequest.userId))).write(
       AuthUsersCompanion(emailVerifiedAt: Value(DateTime.now().toUtc()))
@@ -591,7 +591,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     }
 
     if (lastReauth == null || now.difference(lastReauth).inMinutes > 15) {
-      throw ReauthenticationRequiredException();
+      throw const ReauthenticationRequiredException();
     }
   }
 
@@ -641,7 +641,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<void> reauthenticate({required UuidValue userId, required UuidValue currentTokenId, required String password}) async {
     final user = await (_db.select(_db.authUsers)..where((u) => u.id.equals(userId))).getSingleOrNull();
     if (user == null || user.passwordHash == null || user.passwordSalt == null) {
-      throw InvalidCredentialsException();
+      throw const InvalidCredentialsException();
     }
 
     final isValid = await _security.validatePassword(
@@ -649,7 +649,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       base64Decode(user.passwordHash!),
       base64Decode(user.passwordSalt!)
     );
-    if (!isValid) throw InvalidCredentialsException();
+    if (!isValid) throw const InvalidCredentialsException();
 
     final now = DateTime.now().toUtc();
 
@@ -673,7 +673,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<void> signOutOtherDevice({required UuidValue userId, required UuidValue targetTokenId}) async {
     final session = locator<AppSession>();
     final currentTokenId = session.authenticated?.tokenId;
-    if (currentTokenId == null) throw AccessDeniedException();
+    if (currentTokenId == null) throw const AccessDeniedException();
 
     // Validar re-identificación fresca
     await _ensureStepUpVerified(userId, currentTokenId);

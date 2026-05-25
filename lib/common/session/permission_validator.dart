@@ -8,7 +8,7 @@ extension PermissionValidator on AppSession {
   void requireScope(Scope requiredScope) {
     final userScopes = authenticated?.scopes;
     if (userScopes == null || !userScopes.contains(requiredScope)) {
-      throw AccessDeniedException();
+      throw const AccessDeniedException();
     }
   }
 
@@ -16,7 +16,7 @@ extension PermissionValidator on AppSession {
   void requireAnyScope(List<Scope> requiredScopes) {
     final userScopes = authenticated?.scopes;
     if (userScopes == null || !requiredScopes.any((scope) => userScopes.contains(scope))) {
-      throw AccessDeniedException();
+      throw const AccessDeniedException();
     }
   }
 

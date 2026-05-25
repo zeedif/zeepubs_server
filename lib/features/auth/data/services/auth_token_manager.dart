@@ -157,14 +157,14 @@ class AuthTokenManager {
     
     final row = await (_db.select(_db.refreshTokens)..where((t) => t.id.equals(parsed.id))).getSingleOrNull();
     if (row == null || !uint8ListAreEqual(row.fixedSecret, parsed.fixedSecret)) {
-      throw RefreshTokenInvalidException();
+      throw const RefreshTokenInvalidException();
     }
 
     // Verificar expiración del refresh token
     final oldestValid = DateTime.now().toUtc().subtract(_securityConfig.refreshTokenLifetime);
     if (row.lastUpdatedAt.isBefore(oldestValid)) {
       await destroyRefreshToken(row.id);
-      throw RefreshTokenExpiredException();
+      throw const RefreshTokenExpiredException();
     }
 
     final isValidHash = await _security.validateRefreshToken(
@@ -175,7 +175,7 @@ class AuthTokenManager {
 
     if (!isValidHash) {
       await destroyRefreshToken(row.id);
-      throw RefreshTokenCompromisedException();
+      throw const RefreshTokenCompromisedException();
     }
 
     // Generar nuevo secreto rotativo
