@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package zeepubs.profile;
+
+import "google/protobuf/timestamp.proto";
+
+enum ProfileMergeRequestStatus {
+  MERGE_PENDING = 0;
+  MERGE_APPROVED = 1;
+  MERGE_REJECTED = 2;
+}
+
+message PublicProfile {
+  int32 id = 1;
+  optional string user_id = 2; // UUID string
+  string nickname = 3;
+  optional string avatar_url = 4;
+  optional string bio = 5;
+  repeated ProfileContactLink contact_links = 6;
+}
+
+message ProfileContactLink {
+  int32 id = 1;
+  string platform = 2;
+  string url = 3;
+  optional int32 next_contact_link_id = 4;
+}
+
+message ProfileMergeRequest {
+  int32 id = 1;
+  int32 target_profile_id = 2;
+  int32 source_profile_id = 3;
+  string requester_id = 4; // UUID string
+  optional string resolved_by_id = 5; // UUID string
+  ProfileMergeRequestStatus status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  optional google.protobuf.Timestamp resolved_at = 8;
+}
+
+message GetProfileRequest {
+  optional int32 profile_id = 1;
+}
+
+message GetProfileByUuidRequest {
+  string user_id = 1; // UUID string
+}
+
+message UpdateProfileRequest {
+  int32 profile_id = 1;
+  optional string nickname = 2;
+  optional string avatar_url = 3;
+  optional string bio = 4;
+}
+
+message GetProfilesRequest {
+  int32 page_size = 1;
+  optional string cursor = 2;
+  optional string search_query = 3;
+}
+
+message PaginatedProfilesData {
+  repeated PublicProfile profiles = 1;
+  optional string next_cursor = 2;
+}
+
+message AddContactLinkRequest {
+  int32 profile_id = 1;
+  string platform = 2;
+  string url = 3;
+}
+
+message RemoveContactLinkRequest {
+  int32 contact_link_id = 1;
+}
+
+message UpdateContactLinkRequest {
+  int32 contact_link_id = 1;
+  optional string platform = 2;
+  optional string url = 3;
+}
+
+message ReorderContactLinkRequest {
+  int32 contact_link_id = 1;
+  int32 new_index = 2;
+}
+
+message CreateMergeRequestRequest {
+  int32 target_profile_id = 1;
+}
+
+message GetMergeRequestsRequest {
+  optional ProfileMergeRequestStatus status = 1;
+}
+
+message GetMergeRequestsResponse {
+  repeated ProfileMergeRequest requests = 1;
+}
+
+message MergeDecisionRequest {
+  int32 request_id = 1;
+}
+
+message EmptyResponse {}
+
+service ProfileService {
+  // Gestión de Perfiles Públicos
+  rpc GetProfile(GetProfileRequest) returns (PublicProfile);
+  rpc GetProfileByUuid(GetProfileByUuidRequest) returns (PublicProfile);
+  rpc UpdateProfile(UpdateProfileRequest) returns (PublicProfile);
+  rpc GetProfiles(GetProfilesRequest) returns (PaginatedProfilesData);
+
+  // Enlaces de Contacto
+  rpc AddContactLink(AddContactLinkRequest) returns (ProfileContactLink);
+  rpc RemoveContactLink(RemoveContactLinkRequest) returns (EmptyResponse);
+  rpc UpdateContactLink(UpdateContactLinkRequest) returns (ProfileContactLink);
+  rpc ReorderContactLink(ReorderContactLinkRequest) returns (EmptyResponse);
+
+  // Fusión de Identidades de Perfil (Fantasmas/Asociados)
+  rpc CreateMergeRequest(CreateMergeRequestRequest) returns (ProfileMergeRequest);
+  rpc GetMergeRequests(GetMergeRequestsRequest) returns (GetMergeRequestsResponse);
+  rpc ApproveMergeRequest(MergeDecisionRequest) returns (ProfileMergeRequest);
+  rpc RejectMergeRequest(MergeDecisionRequest) returns (ProfileMergeRequest);
+}

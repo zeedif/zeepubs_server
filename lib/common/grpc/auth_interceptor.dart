@@ -10,7 +10,13 @@ const _publicMethods = [
   '/zeepubs.auth.AuthService/SignUp',
   '/zeepubs.auth.AuthService/SignIn',
   '/zeepubs.auth.AuthService/StartEmailOtpSignIn',
-  '/zeepubs.auth.AuthService/CompleteEmailOtpSignIn',
+  '/zeepubs.auth.AuthService/FinishEmailOtpSignIn',
+  '/zeepubs.auth.AuthService/SignInWithOidc',
+  '/zeepubs.auth.AuthService/GenerateFido2AuthenticationChallenge',
+  '/zeepubs.auth.AuthService/FinishFido2Authentication',
+  '/zeepubs.auth.AuthService/StartPasswordReset',
+  '/zeepubs.auth.AuthService/FinishPasswordReset',
+  '/zeepubs.auth.AuthService/FinishEmailVerification',
 ];
 
 /// Expresión regular precompilada para extraer el token Bearer.

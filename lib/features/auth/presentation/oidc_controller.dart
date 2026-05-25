@@ -5,8 +5,8 @@ import '/common/di/service_locator.dart';
 import '/common/mediator/mediator.dart';
 import '/src/generated/auth.pb.dart';
 
-import '../data/services/oidc_handler.dart';
 import '../core/use_cases/oidc/sign_in_with_oidc.dart';
+import '../data/services/oidc_handler.dart';
 
 class OidcController {
   Router get router {

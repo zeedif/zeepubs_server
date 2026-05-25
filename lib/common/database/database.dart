@@ -25,6 +25,7 @@ part 'database.g.dart';
     PasskeyChallenges,
     PublicProfiles,
     ProfileContactLinks,
+    ProfileMergeRequests,
   ],
 )
 class AppDatabase extends _$AppDatabase {

@@ -123,7 +123,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   /// Método helper interno para la creación base del usuario en DB
-  Future<AuthUser> _createUserEntities({
+  Future<AuthUserRow> _createUserEntities({
     required String username,
     String? email,
     String? password,
@@ -308,7 +308,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     } else {
       if (!_config.allowOidcSignup) throw const OidcSignupDisabledException();
 
-      AuthUser? user;
+      AuthUserRow? user;
       if (request.email != null) {
         user = await (_db.select(_db.authUsers)..where((u) => u.email.equals(request.email!.toLowerCase()))).getSingleOrNull();
       }

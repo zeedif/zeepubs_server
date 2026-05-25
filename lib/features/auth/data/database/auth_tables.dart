@@ -27,6 +27,7 @@ class SetScopeConverter extends TypeConverter<Set<Scope>, String> {
 }
 
 /// Tabla de Usuarios
+@DataClassName('AuthUserRow')
 class AuthUsers extends Table {
   Column<UuidValue> get id => customType(uuidCustomType).clientDefault(() => const Uuid().v4obj())();
   TextColumn get username => text().unique()();
@@ -48,6 +49,7 @@ class AuthUsers extends Table {
 // --- FLUJOS DE VERIFICACIÓN Y RECUPERACIÓN ---
 
 /// Tabla para solicitudes de inicio de sesión sin contraseña (Email OTP)
+@DataClassName('EmailOtpRequestRow')
 class EmailOtpRequests extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get email => text()();
@@ -57,6 +59,7 @@ class EmailOtpRequests extends Table {
 }
 
 /// Tabla para solicitudes de verificación de cuenta nueva (Email Verification)
+@DataClassName('EmailVerificationRequestRow')
 class EmailVerificationRequests extends Table {
   IntColumn get id => integer().autoIncrement()();
   Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
@@ -66,6 +69,7 @@ class EmailVerificationRequests extends Table {
 }
 
 /// Tabla para solicitudes de restablecimiento de contraseña olvidada (Password Reset)
+@DataClassName('PasswordResetRequestRow')
 class PasswordResetRequests extends Table {
   IntColumn get id => integer().autoIncrement()();
   Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
@@ -77,6 +81,7 @@ class PasswordResetRequests extends Table {
 // --- PERSISTENCIA DE SESIONES Y TOKENS ---
 
 /// Tabla de Sesiones (SAS)
+@DataClassName('AuthSessionRow')
 class AuthSessions extends Table {
   Column<UuidValue> get id => customType(uuidCustomType).clientDefault(() => const Uuid().v4obj())();
   Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
@@ -102,6 +107,7 @@ class AuthSessions extends Table {
 }
 
 /// Tabla para Refresh Tokens (JWT)
+@DataClassName('RefreshTokenRow')
 class RefreshTokens extends Table {
   Column<UuidValue> get id => customType(uuidCustomType).clientDefault(() => const Uuid().v4obj())();
   Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
@@ -128,6 +134,7 @@ class RefreshTokens extends Table {
 // --- FEDERACIÓN EXTERNA Y PASSWORDLESS (FIDO2) ---
 
 /// Tabla para vinculación con proveedores de identidad externos
+@DataClassName('OidcAccountRow')
 class OidcAccounts extends Table {
   IntColumn get id => integer().autoIncrement()();
   Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
@@ -139,6 +146,7 @@ class OidcAccounts extends Table {
 }
 
 /// Tabla temporal para mantener la integridad de los flujos OAuth2
+@DataClassName('OidcStateRow')
 class OidcStates extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get state => text().unique()();
@@ -148,6 +156,7 @@ class OidcStates extends Table {
 }
 
 /// Tabla para credenciales biométricas y llaves de seguridad
+@DataClassName('PasskeyAccountRow')
 class PasskeyAccounts extends Table {
   IntColumn get id => integer().autoIncrement()();
   Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
@@ -160,6 +169,7 @@ class PasskeyAccounts extends Table {
 }
 
 /// Tabla temporal para desafíos criptográficos de WebAuthn (Passkey Challenges)
+@DataClassName('PasskeyChallengeRow')
 class PasskeyChallenges extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get challenge => text()();

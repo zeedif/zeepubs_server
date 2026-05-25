@@ -39,6 +39,9 @@
 
   // --- Excepciones del Dominio de Perfil ---
   "profile.not_found": "User profile not found.",
+  "profile.contact_link_not_found": "Contact link not found.",
+  "profile.access_denied": "Profile access denied.",
+  "profile.invalid_merge_request": "Merge request invalid or already processed.",
 
   // --- Contexto de Metadatos de Dispositivos (Clientes) ---
   "client.name_unknown": "Unknown Client",

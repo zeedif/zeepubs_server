@@ -34,7 +34,22 @@ import '/features/auth/data/services/fido2_handler.dart';
 import '/features/auth/data/services/hasher.dart';
 import '/features/auth/data/services/oidc_handler.dart';
 import '/features/auth/data/services/security.dart';
+import '/features/profile/core/repositories/profile_repo.dart';
+import '/features/profile/core/use_cases/commands/add_profile_contact_link.dart';
+import '/features/profile/core/use_cases/commands/approve_profile_merge_request.dart';
+import '/features/profile/core/use_cases/commands/create_profile_merge_request.dart';
+import '/features/profile/core/use_cases/commands/reject_profile_merge_request.dart';
+import '/features/profile/core/use_cases/commands/remove_profile_contact_link.dart';
+import '/features/profile/core/use_cases/commands/reorder_profile_contact_links.dart';
+import '/features/profile/core/use_cases/commands/update_profile.dart';
+import '/features/profile/core/use_cases/commands/update_profile_contact_link.dart';
+import '/features/profile/core/use_cases/queries/get_profile_id.dart';
+import '/features/profile/core/use_cases/queries/get_profile_merge_requests.dart';
+import '/features/profile/core/use_cases/queries/get_profile_uuid.dart';
+import '/features/profile/core/use_cases/queries/get_profiles.dart';
+import '/features/profile/data/repositories/profile_repo_impl.dart';
 import '/src/generated/auth.pb.dart';
+import '/src/generated/profile.pb.dart';
 
 import '../config/app_config.dart';
 import '../database/database.dart';
@@ -103,6 +118,11 @@ void setupLocator(YamlMap config) {
     ),
   );
 
+  // Repositorios del Módulo Perfil
+  locator.registerLazySingleton<IProfileRepository>(
+    () => ProfileRepositoryImpl(locator<AppDatabase>()),
+  );
+
   // 5. Mediator
   locator.registerLazySingleton<Mediator>(() {
     final mediator = Mediator(locator);
@@ -136,6 +156,24 @@ void setupLocator(YamlMap config) {
     mediator.registerHandler<SignOutOtherDeviceCommand, void, SignOutOtherDeviceHandler>();
     mediator.registerHandler<SignOutAllDevicesCommand, void, SignOutAllDevicesHandler>();
     mediator.registerHandler<SignOutAllOtherDevicesCommand, void, SignOutAllOtherDevicesHandler>();
+
+    // --- Módulo: Perfiles Públicos ---
+    mediator.registerHandler<GetProfileByIdQuery, PublicProfile, GetProfileByIdHandler>();
+    mediator.registerHandler<GetProfileByUuidQuery, PublicProfile, GetProfileByUuidHandler>();
+    mediator.registerHandler<UpdateProfileCommand, PublicProfile, UpdateProfileHandler>();
+    mediator.registerHandler<GetProfilesQuery, PaginatedProfilesData, GetProfilesHandler>();
+
+    // --- Módulo: Enlaces de Contacto ---
+    mediator.registerHandler<AddProfileContactLinkCommand, ProfileContactLink, AddProfileContactLinkHandler>();
+    mediator.registerHandler<RemoveProfileContactLinkCommand, void, RemoveProfileContactLinkHandler>();
+    mediator.registerHandler<UpdateProfileContactLinkCommand, ProfileContactLink, UpdateProfileContactLinkHandler>();
+    mediator.registerHandler<ReorderProfileContactLinksCommand, void, ReorderProfileContactLinksHandler>();
+
+    // --- Módulo: Fusión de Perfiles ---
+    mediator.registerHandler<CreateProfileMergeRequestCommand, ProfileMergeRequest, CreateProfileMergeRequestHandler>();
+    mediator.registerHandler<GetProfileMergeRequestsQuery, List<ProfileMergeRequest>, GetProfileMergeRequestsHandler>();
+    mediator.registerHandler<ApproveProfileMergeRequestCommand, ProfileMergeRequest, ApproveProfileMergeRequestHandler>();
+    mediator.registerHandler<RejectProfileMergeRequestCommand, ProfileMergeRequest, RejectProfileMergeRequestHandler>();
 
     return mediator;
   });
@@ -175,4 +213,20 @@ void setupLocator(YamlMap config) {
   locator.registerFactory(() => SignOutOtherDeviceHandler(locator<IAuthRepository>()));
   locator.registerFactory(() => SignOutAllDevicesHandler(locator<IAuthRepository>()));
   locator.registerFactory(() => SignOutAllOtherDevicesHandler(locator<IAuthRepository>()));
+
+  // Profile Handlers - Perfiles Públicos
+  locator.registerFactory(() => GetProfileByIdHandler(locator<IProfileRepository>()));
+  locator.registerFactory(() => GetProfileByUuidHandler(locator<IProfileRepository>()));
+  locator.registerFactory(() => UpdateProfileHandler(locator<Transactional>(), locator<IProfileRepository>()));
+  locator.registerFactory(() => GetProfilesHandler(locator<IProfileRepository>()));
+
+  locator.registerFactory(() => AddProfileContactLinkHandler(locator<Transactional>(), locator<IProfileRepository>()));
+  locator.registerFactory(() => RemoveProfileContactLinkHandler(locator<Transactional>(), locator<IProfileRepository>()));
+  locator.registerFactory(() => UpdateProfileContactLinkHandler(locator<Transactional>(), locator<IProfileRepository>()));
+  locator.registerFactory(() => ReorderProfileContactLinksHandler(locator<Transactional>(), locator<IProfileRepository>()));
+
+  locator.registerFactory(() => CreateProfileMergeRequestHandler(locator<Transactional>(), locator<IProfileRepository>()));
+  locator.registerFactory(() => GetProfileMergeRequestsHandler(locator<IProfileRepository>()));
+  locator.registerFactory(() => ApproveProfileMergeRequestHandler(locator<Transactional>(), locator<IProfileRepository>()));
+  locator.registerFactory(() => RejectProfileMergeRequestHandler(locator<Transactional>(), locator<IProfileRepository>()));
 }

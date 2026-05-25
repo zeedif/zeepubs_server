@@ -9,12 +9,10 @@ import 'package:yaml/yaml.dart';
 
 import 'package:zeepubs_server/common/di/service_locator.dart';
 import 'package:zeepubs_server/common/grpc/auth_interceptor.dart';
-import 'package:zeepubs_server/common/mediator/mediator.dart';
-import 'package:zeepubs_server/features/auth/core/use_cases/oidc/sign_in_with_oidc.dart';
 import 'package:zeepubs_server/features/auth/data/jobs/token_cleanup_job.dart';
-import 'package:zeepubs_server/features/auth/data/services/oidc_handler.dart';
 import 'package:zeepubs_server/features/auth/presentation/auth_service_impl.dart';
-import 'package:zeepubs_server/src/generated/auth.pb.dart';
+import 'package:zeepubs_server/features/auth/presentation/oidc_controller.dart';
+import 'package:zeepubs_server/features/profile/presentation/profile_service_impl.dart';
 
 import 'generate_l10n.dart';
 
@@ -46,7 +44,7 @@ void main(List<String> args) async {
   final grpcServer = grpc.Server.create(
     services: [
       AuthServiceImpl(),
-      // ProfileServiceImpl(),
+      ProfileServiceImpl(),
     ],
     interceptors: [authInterceptor],
   );
@@ -57,59 +55,7 @@ void main(List<String> args) async {
   // 3. Levantar Servidor HTTP/REST con Shelf (Puerto 8081 para OIDC y webhooks)
   final app = Router();
 
-  app.get('/oidc/callback', (Request request) async {
-    try {
-      if (!locator.isRegistered<OidcHandler>()) {
-        throw Exception('OIDC no está configurado en el servidor.');
-      }
-
-      final queryParams = request.url.queryParameters;
-      final oidcHandler = locator<OidcHandler>();
-
-      final result = await oidcHandler.processCallback(queryParams);
-      final credential = result.credential;
-      final strategyName = result.authStrategy;
-
-      final claims = credential.idToken.claims;
-      final issuer = claims['iss'] as String?;
-      if (issuer == null) throw Exception('Token OIDC sin issuer.');
-
-      final userInfo = await credential.getUserInfo();
-
-      final strategyEnum = AuthStrategy.values.firstWhere(
-        (e) => e.name == strategyName.toUpperCase(),
-        orElse: () => AuthStrategy.JWT,
-      );
-
-      final command = SignInWithOidcCommand(
-        issuer: issuer,
-        subject: userInfo.subject,
-        email: userInfo.email,
-        nickname: userInfo.givenName ?? userInfo.name,
-        avatarUrl: userInfo.picture?.toString(),
-        strategy: strategyEnum,
-      );
-
-      final authSuccess = await locator<Mediator>().send(command);
-
-      final redirectUrl = Uri(
-        scheme: 'zeepubs-app',
-        host: 'auth',
-        path: 'success',
-        queryParameters: {
-          'token': authSuccess.token,
-          if (authSuccess.refreshToken.isNotEmpty) 'refreshToken': authSuccess.refreshToken,
-        },
-      );
-
-      return Response.found(redirectUrl.toString());
-    } catch (e, stackTrace) {
-      print('Error OIDC: $e\n$stackTrace');
-      return Response.found(
-        'zeepubs-app://auth/error?message=${Uri.encodeComponent(e.toString())}',
-      );
-    }
-  });
+  app.mount('/oidc', OidcController().router.call);
 
   // Pipeline con CORS y Logs para la web
   final handler = Pipeline().addMiddleware(corsHeaders()).addMiddleware(logRequests()).addHandler(app.call);
@@ -119,7 +65,5 @@ void main(List<String> args) async {
     InternetAddress.anyIPv4,
     8081,
   );
-  print(
-    '✅ Servidor REST (OIDC/Webhooks) escuchando en puerto ${httpServer.port}...',
-  );
+  print('✅ Servidor REST (OIDC/Webhooks) escuchando en puerto ${httpServer.port}...');
 }
