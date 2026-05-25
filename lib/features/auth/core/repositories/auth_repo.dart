@@ -5,6 +5,7 @@ import '/src/generated/auth.pb.dart';
 import '../use_cases/classic/create_user.dart';
 import '../use_cases/classic/sign_in.dart';
 import '../use_cases/classic/sign_up.dart';
+import '../use_cases/classic/update_user.dart';
 import '../use_cases/email_otp/finish_email_otp_sign_in.dart';
 import '../use_cases/email_otp/start_email_otp_sign_in.dart';
 import '../use_cases/email_verification/finish_email_verification.dart';
@@ -20,6 +21,7 @@ abstract class IAuthRepository {
   // --- Flujo de Registro ---
   Future<AuthSuccess> signUp({required SignUpCommand request, required AuthStrategy strategy});
   Future<CreateUserResponse> createUser({required CreateUserCommand request});
+  Future<void> updateUser({required UpdateUserCommand request});
 
   // --- Flujos de Inicio de Sesión ---
   Future<AuthSuccess> signIn({required SignInCommand request, required AuthStrategy strategy});

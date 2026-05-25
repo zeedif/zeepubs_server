@@ -4,23 +4,17 @@ import '/src/generated/auth.pb.dart';
 
 extension PermissionValidator on AppSession {
   /// Verifica si el usuario tiene un scope específico sin lanzar excepción.
+  /// Si el usuario posee [Scope.SYSTEM_ADMIN], siempre devuelve true.
   bool hasScope(Scope scope) {
-    return authenticated?.scopes.contains(scope) ?? false;
+    final s = authenticated?.scopes;
+    return s != null && (s.contains(Scope.SYSTEM_ADMIN) || s.contains(scope));
   }
 
-  /// Verifica si el usuario tiene al menos uno de los scopes sin lanzar excepción.
-  bool hasAnyScope(List<Scope> scopes) {
-    return authenticated?.scopes.any((s) => scopes.contains(s)) ?? false;
-  }
-
-  /// Verifica si el usuario actual tiene permisos administrativos de sistema.
-  bool isSystemAdmin() {
-    return hasAnyScope([
-      Scope.SYSTEM_MANAGE_USERS,
-      Scope.SYSTEM_MANAGE_PROFILES,
-      Scope.SYSTEM_ASSIGN_PERMISSIONS,
-      Scope.SYSTEM_MANAGE_WORKGROUPS,
-    ]);
+  /// Verifica si el usuario tiene al menos uno de los scopes requeridos.
+  /// Si el usuario posee [Scope.SYSTEM_ADMIN], siempre devuelve true.
+  bool hasAnyScope(Iterable<Scope> scopes) {
+    final s = authenticated?.scopes;
+    return s != null && (s.contains(Scope.SYSTEM_ADMIN) || scopes.any(s.contains));
   }
 
   /// Asegura que el usuario de la sesión actual tiene un scope específico.
@@ -29,13 +23,8 @@ extension PermissionValidator on AppSession {
     if (!hasScope(requiredScope)) throw const AccessDeniedException();
   }
 
-  /// Asegura que el usuario tiene al menos uno de los scopes de la lista.
-  void requireAnyScope(List<Scope> requiredScopes) {
+  /// Asegura que el usuario tiene al menos uno de los scopes del iterable.
+  void requireAnyScope(Iterable<Scope> requiredScopes) {
     if (!hasAnyScope(requiredScopes)) throw const AccessDeniedException();
-  }
-
-  /// Lanza excepción si el usuario no tiene permisos de administración global.
-  void requireSystemAdmin() {
-    if (!isSystemAdmin()) throw const AccessDeniedException();
   }
 }

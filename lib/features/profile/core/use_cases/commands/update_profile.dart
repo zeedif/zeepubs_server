@@ -34,13 +34,11 @@ class UpdateProfileHandler implements IRequestHandler<UpdateProfileCommand, Publ
   Future<PublicProfile> handle(UpdateProfileCommand request) async {
     final session = locator<AppSession>();
     final canManageAll = session.hasScope(Scope.SYSTEM_MANAGE_PROFILES);
-    final canEditUnassociated = canManageAll || session.hasScope(Scope.PROFILE_EDIT_UNASSOCIATED);
 
     return _tx(() async {
       return await _profileRepository.updateProfile(
         request: request,
         enforceOwnershipId: canManageAll ? null : session.authenticated!.userId,
-        allowUnassociated: canEditUnassociated,
       );
     });
   }

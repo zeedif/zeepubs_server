@@ -112,22 +112,12 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<PublicProfileRow> _getAndAuthorizeProfile(
     int profileId, 
     UuidValue? enforceOwnershipId, 
-    bool allowUnassociated,
   ) async {
     final profile = await (_db.select(_db.publicProfiles)..where((p) => p.id.equals(profileId))).getSingleOrNull();
     if (profile == null) throw const UserProfileNotFoundException();
 
-    if (enforceOwnershipId != null) {
-      final isOwner = profile.userId == enforceOwnershipId;
-      final isUnassociated = profile.userId == null;
-
-      if (!isOwner) {
-        if (isUnassociated && allowUnassociated) {
-          // Operación permitida para perfiles huérfanos
-        } else {
-          throw const ProfileAccessDeniedException();
-        }
-      }
+    if (enforceOwnershipId != null && profile.userId != enforceOwnershipId) {
+      throw const ProfileAccessDeniedException();
     }
 
     return profile;
@@ -136,12 +126,11 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<ProfileContactLinkRow> _getAndAuthorizeContactLink(
     int contactLinkId, 
     UuidValue? enforceOwnershipId, 
-    bool allowUnassociated,
   ) async {
     final link = await (_db.select(_db.profileContactLinks)..where((l) => l.id.equals(contactLinkId))).getSingleOrNull();
     if (link == null) throw const ContactLinkNotFoundException();
 
-    await _getAndAuthorizeProfile(link.profileId, enforceOwnershipId, allowUnassociated);
+    await _getAndAuthorizeProfile(link.profileId, enforceOwnershipId);
     return link;
   }
 
@@ -197,9 +186,8 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<PublicProfile> updateProfile({
     required UpdateProfileCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   }) async {
-    final profile = await _getAndAuthorizeProfile(request.profileId, enforceOwnershipId, allowUnassociated);
+    final profile = await _getAndAuthorizeProfile(request.profileId, enforceOwnershipId);
 
     await (_db.update(_db.publicProfiles)..where((p) => p.id.equals(profile.id))).write(
       PublicProfilesCompanion(
@@ -274,9 +262,8 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<ProfileContactLink> addContactLink({
     required AddProfileContactLinkCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   }) async {
-    final profile = await _getAndAuthorizeProfile(request.profileId, enforceOwnershipId, allowUnassociated);
+    final profile = await _getAndAuthorizeProfile(request.profileId, enforceOwnershipId);
 
     final oldTail = await (_db.select(_db.profileContactLinks)
           ..where((l) => l.profileId.equals(profile.id) & l.nextContactLinkId.isNull()))
@@ -303,9 +290,8 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<void> removeContactLink({
     required int contactLinkId,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   }) async {
-    final linkToRemove = await _getAndAuthorizeContactLink(contactLinkId, enforceOwnershipId, allowUnassociated);
+    final linkToRemove = await _getAndAuthorizeContactLink(contactLinkId, enforceOwnershipId);
 
     final pointingLink = await (_db.select(_db.profileContactLinks)
           ..where((l) => l.nextContactLinkId.equals(linkToRemove.id)))
@@ -324,9 +310,8 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<ProfileContactLink> updateContactLink({
     required UpdateProfileContactLinkCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   }) async {
-    final link = await _getAndAuthorizeContactLink(request.contactLinkId, enforceOwnershipId, allowUnassociated);
+    final link = await _getAndAuthorizeContactLink(request.contactLinkId, enforceOwnershipId);
 
     await (_db.update(_db.profileContactLinks)..where((l) => l.id.equals(link.id))).write(
       ProfileContactLinksCompanion(
@@ -343,9 +328,8 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<void> reorderContactLink({
     required ReorderProfileContactLinksCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   }) async {
-    final linkToMove = await _getAndAuthorizeContactLink(request.contactLinkId, enforceOwnershipId, allowUnassociated);
+    final linkToMove = await _getAndAuthorizeContactLink(request.contactLinkId, enforceOwnershipId);
 
     final links = await (_db.select(_db.profileContactLinks)..where((l) => l.profileId.equals(linkToMove.profileId))).get();
     final sorted = _sortContactLinks(links);

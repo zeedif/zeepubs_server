@@ -13,27 +13,17 @@ enum AuthStrategy {
 
 enum Scope {
   UNKNOWN_SCOPE = 0;
-  SYSTEM_MANAGE_USERS = 1;
-  SYSTEM_MANAGE_PROFILES = 2;
-  SYSTEM_ASSIGN_PERMISSIONS = 3;
-  SYSTEM_MANAGE_WORKGROUPS = 4;
-  WORKGROUP_CREATE = 5;
-  WORKGROUP_EDIT_DETAILS = 6;
-  WORKGROUP_ASSIGN_PERMISSIONS = 7;
-  WORKGROUP_INVITE_MEMBERS = 8;
-  WORKGROUP_REMOVE_MEMBERS = 9;
-  WORKGROUP_DELETE = 10;
-  PROJECT_CREATE = 11;
-  PROJECT_EDIT = 12;
-  PROJECT_DELETE = 13;
-  MILESTONE_CREATE = 14;
-  MILESTONE_EDIT = 15;
-  MILESTONE_DELETE = 16;
-  TASK_CLAIM = 17;
-  TASK_ASSIGN = 18;
-  REVIEW_MILESTONE_APPROVE = 19;
-  RELEASE_MILESTONE_PUBLIC = 20;
-  PROFILE_EDIT_UNASSOCIATED = 21;
+  // --- Permisos de Sistema (Globales) ---
+  SYSTEM_ADMIN = 1;             // Acceso total de la plataforma
+  SYSTEM_MANAGE_USERS = 2;      // Gestión y administración de cuentas de usuario
+  SYSTEM_MANAGE_PROFILES = 3;   // Gestión de perfiles públicos y fusión de identidades
+  SYSTEM_MANAGE_WORKGROUPS = 4; // Gestión global de grupos de trabajo
+  // --- Permisos de Grupo de Trabajo (Internos de cada Grupo) ---
+  GROUP_MANAGE_MEMBERS = 5;     // Gestión de miembros, invitaciones y permisos internos
+  GROUP_MANAGE_PROJECTS = 6;    // Gestión de proyectos, hitos, lanzamientos y enlaces
+  GROUP_MANAGE_TASKS = 7;       // Gestión de checklist de tareas, asignación y créditos
+  GROUP_MANAGE_REVIEWS = 8;     // Control de calidad, revisiones, aprobaciones y correcciones
+  GROUP_MANAGE_COMMENTS = 9;    // Moderación de comentarios sobre el trabajo del grupo
 }
 
 // --- Objetos de Dominio ---
@@ -68,10 +58,20 @@ message CreateUserRequest {
   string username = 1;
   optional string email = 2;
   optional string password = 3;
+  repeated Scope scopes = 4;
 }
 
 message CreateUserResponse {
   string user_id = 1; // UUID string
+}
+
+message UpdateUserRequest {
+  string target_user_id = 1; // UUID string
+  string username = 2;
+  optional string email = 3;
+  repeated Scope scopes = 4;
+  bool blocked = 5;
+  bool is_active = 6;
 }
 
 // --- FLUJOS DE INICIO DE SESIÓN (SIGN IN) ---
@@ -177,6 +177,7 @@ service AuthService {
   // --- Flujo de Registro ---
   rpc SignUp(SignUpRequest) returns (AuthSuccess);
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (EmptyResponse);
 
   // --- Flujos de Inicio de Sesión ---
   rpc SignIn(SignInRequest) returns (AuthSuccess);

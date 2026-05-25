@@ -17,6 +17,7 @@ import '../../core/repositories/auth_repo.dart';
 import '../../core/use_cases/classic/create_user.dart';
 import '../../core/use_cases/classic/sign_in.dart';
 import '../../core/use_cases/classic/sign_up.dart';
+import '../../core/use_cases/classic/update_user.dart';
 import '../../core/use_cases/email_otp/finish_email_otp_sign_in.dart';
 import '../../core/use_cases/email_otp/start_email_otp_sign_in.dart';
 import '../../core/use_cases/email_verification/finish_email_verification.dart';
@@ -87,20 +88,13 @@ class AuthRepositoryImpl implements IAuthRepository {
     final isFirstUser = firstUserCheck == null;
 
     if (isFirstUser) {
-      // Asignar los scopes de gestión de sistema
-      final adminScopes = {
-        Scope.SYSTEM_MANAGE_USERS,
-        Scope.SYSTEM_MANAGE_PROFILES,
-        Scope.SYSTEM_ASSIGN_PERMISSIONS,
-        Scope.SYSTEM_MANAGE_WORKGROUPS,
-      };
-
+      // Asgianr el scope de administración
       final newUser = await _createUserEntities(
         username: request.username,
         email: request.email,
         password: request.password,
         emailIsVerified: true,
-        initialScopes: adminScopes,
+        initialScopes: {Scope.SYSTEM_ADMIN}
       );
 
       // Retornar token
@@ -144,9 +138,82 @@ class AuthRepositoryImpl implements IAuthRepository {
       email: request.email,
       password: request.password,
       emailIsVerified: false,
-      initialScopes: {},
+      initialScopes: request.scopes,
     );
     return CreateUserResponse(userId: newUser.id.toString());
+  }
+
+  @override
+  Future<void> updateUser({required UpdateUserCommand request}) async {
+    final targetUser = await (_db.select(_db.authUsers)..where((u) => u.id.equals(request.targetUserId))).getSingleOrNull();
+    if (targetUser == null) throw const UserNotFoundException();
+
+    final normalizedEmail = request.email?.toLowerCase();
+
+    // Validar unicidad del nombre de usuario si cambió
+    if (targetUser.username.toLowerCase() != request.username.toLowerCase()) {
+      final conflict = await (_db.select(_db.authUsers)..where((u) => u.username.equals(request.username))).getSingleOrNull();
+      if (conflict != null) throw const UsernameAlreadyInUseException();
+    }
+
+    // Validar unicidad de email si cambió
+    if (normalizedEmail != null && targetUser.email != normalizedEmail) {
+      final conflict = await (_db.select(_db.authUsers)..where((u) => u.email.equals(normalizedEmail))).getSingleOrNull();
+      if (conflict != null) throw const EmailAlreadyInUseException();
+    }
+
+    // --- PROTECCIÓN CRÍTICA DE AUTOLOCKOUT (LAST ADMIN PROTECTION) ---
+    final session = locator<AppSession>();
+    final isSelfUpdate = targetUser.id == session.authenticated?.userId;
+
+    if (isSelfUpdate) {
+      // Prevención de auto-sabotaje
+      if (targetUser.scopes.contains(Scope.SYSTEM_ADMIN) && !request.scopes.contains(Scope.SYSTEM_ADMIN)) {
+        throw StateError('No puedes remover tu propio permiso de administrador supremo.');
+      }
+      if (targetUser.scopes.contains(Scope.SYSTEM_MANAGE_USERS) && !request.scopes.contains(Scope.SYSTEM_MANAGE_USERS)) {
+        throw StateError('No puedes remover tu propio permiso de gestión de usuarios.');
+      }
+      if (request.blocked && !targetUser.blocked) {
+        throw StateError('No puedes bloquear tu propia cuenta.');
+      }
+      if (!request.isActive && targetUser.isActive) {
+        throw StateError('No puedes desactivar tu propia cuenta.');
+      }
+    } else {
+      // Protección del último administrador cuando se edita a OTRO usuario
+      final hadAdminScope = targetUser.scopes.contains(Scope.SYSTEM_ADMIN);
+      final losesAdminAccess = !request.scopes.contains(Scope.SYSTEM_ADMIN) || request.blocked || !request.isActive;
+
+      if (hadAdminScope && losesAdminAccess) {
+        // Traemos los administradores activos y no bloqueados, excluyendo al que estamos editando.
+        final adminVal = Scope.SYSTEM_ADMIN.value.toString();
+        final activeAdminsCount =
+            await (_db.select(_db.authUsers)..where(
+                  (u) => u.id.equals(request.targetUserId).not() & u.blocked.not() & u.isActive &
+                      (u.scopes.equals(adminVal) | u.scopes.like('$adminVal,%') | u.scopes.like('%,$adminVal') | u.scopes.like('%,$adminVal,%')),
+                ))
+                .get()
+                .then((admins) => admins.length);
+
+        if (activeAdminsCount == 0) {
+          throw StateError(
+            'No se puede remover el permiso SYSTEM_ADMIN, bloquear o desactivar a este usuario '
+            'porque es el único administrador activo del sistema.'
+          );
+        }
+      }
+    }
+
+    await (_db.update(_db.authUsers)..where((u) => u.id.equals(request.targetUserId))).write(
+      AuthUsersCompanion(
+        username: Value(request.username),
+        email: Value(normalizedEmail),
+        scopes: Value(request.scopes),
+        blocked: Value(request.blocked),
+        isActive: Value(request.isActive),
+      ),
+    );
   }
 
   /// Método helper interno para la creación base del usuario en DB

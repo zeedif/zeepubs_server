@@ -12,6 +12,7 @@ import '../core/exceptions/auth_exceptions.dart';
 import '../core/use_cases/classic/create_user.dart';
 import '../core/use_cases/classic/sign_in.dart';
 import '../core/use_cases/classic/sign_up.dart';
+import '../core/use_cases/classic/update_user.dart';
 import '../core/use_cases/email_otp/finish_email_otp_sign_in.dart';
 import '../core/use_cases/email_otp/start_email_otp_sign_in.dart';
 import '../core/use_cases/email_verification/finish_email_verification.dart';
@@ -178,8 +179,29 @@ class AuthServiceImpl extends AuthServiceBase {
           username: request.username,
           email: request.hasEmail() ? request.email : null,
           password: request.hasPassword() ? request.password : null,
+          scopes: request.scopes.toSet(),
         );
         return await locator<Mediator>().send(command);
+      } catch (e, stack) {
+        throw _mapExceptionToGrpcError(e, stack);
+      }
+    });
+  }
+
+  @override
+  Future<EmptyResponse> updateUser(ServiceCall call, UpdateUserRequest request) async {
+    return withRequestScope(call, () async {
+      try {
+        final command = UpdateUserCommand(
+          targetUserId: UuidValue.fromString(request.targetUserId),
+          username: request.username,
+          email: request.hasEmail() ? request.email : null,
+          scopes: request.scopes.toSet(),
+          blocked: request.blocked,
+          isActive: request.isActive,
+        );
+        await locator<Mediator>().send(command);
+        return EmptyResponse();
       } catch (e, stack) {
         throw _mapExceptionToGrpcError(e, stack);
       }

@@ -29,13 +29,11 @@ class ReorderProfileContactLinksHandler implements IRequestHandler<ReorderProfil
   Future<void> handle(ReorderProfileContactLinksCommand request) async {
     final session = locator<AppSession>();
     final canManageAll = session.hasScope(Scope.SYSTEM_MANAGE_PROFILES);
-    final canEditUnassociated = canManageAll || session.hasScope(Scope.PROFILE_EDIT_UNASSOCIATED);
 
     return _tx(() async {
       await _profileRepository.reorderContactLink(
         request: request,
         enforceOwnershipId: canManageAll ? null : session.authenticated!.userId,
-        allowUnassociated: canEditUnassociated,
       );
     });
   }

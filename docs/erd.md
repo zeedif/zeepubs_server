@@ -289,73 +289,119 @@ erDiagram
     }
 ```
 
-### Lista de Permisos del Sistema
+---
 
-Aquí tienes una lista exhaustiva y categorizada de los permisos que se pueden derivar de la lógica de negocio descrita. La columna `category` en la tabla `PERMISSION` contendría estos agrupadores.
+### Descripción y Flujos de Trabajo de la Plataforma
 
-#### Categoría: `system` (Permisos Globales de Administración)
-*   **`system.manage_users`**: Permite suspender, reactivar y editar las cuentas de `USER`.
-*   **`system.manage_profiles`**: Permite editar cualquier `PUBLIC_PROFILE` y fusionar perfiles con identidades.
-*   **`system.assign_permissions`**: Permite asignar cualquier permiso (incluidos los de `system`) a otros usuarios.
-*   **`system.manage_workgroups`**: Permite editar, eliminar y gestionar cualquier `WORKGROUP` en la plataforma, incluyendo la reasignación del fundador y del líder.
+**ZeePubs** está diseñado como un ecosistema colaborativo centrado en la creación, gestión y publicación de trabajos derivados (traducciones, limpiezas, colorizaciones, maquetaciones a formato EPUB, etc.) basados en obras o series ya existentes.
 
-#### Categoría: `workgroup` (Gestión de Grupos de Trabajo)
-Permisos que se asignan a miembros dentro de un grupo específico para gestionarlo.
+**1. Usuarios, Perfiles y Grupos**
+Todo usuario en la plataforma posee un perfil público personalizable, al cual puede asociar enlaces de contacto o redes sociales. Los usuarios pueden agruparse creando o uniéndose a **Grupos de Trabajo**. En lugar de utilizar un sistema rígido de "Roles" predefinidos en la base de datos, la plataforma confía en la asignación directa de permisos (*Scopes*) a los miembros del grupo. Esto permite a cada equipo organizar su jerarquía de forma orgánica y flexible, evitando la complejidad de mantener entidades de roles separadas.
 
-*   **`workgroup.create`**: Permite a un usuario crear un nuevo `WORKGROUP`, convirtiéndose en su fundador y líder inicial.
-*   **`workgroup.edit_details`**: Permite editar el nombre, la descripción y los enlaces de contacto del grupo.
-*   **`workgroup.assign_permissions`**: Permite asignar y revocar permisos de categorías como project, milestone, task, etc., a los miembros del grupo.
-*   **`workgroup.invite_members`**: Permite invitar nuevos perfiles a unirse al grupo.
-*   **`workgroup.remove_members`**: Permite expulsar a miembros del grupo.
-*   **`workgroup.delete`**: Permite eliminar el grupo de trabajo de forma permanente.
+**2. Proyectos y Trabajos Derivados**
+Los grupos no reclaman la autoría de una obra original completa, sino que registran "Proyectos" basados en ellas. Por ejemplo, un grupo puede crear un proyecto para la "Traducción del Volumen 5 de una novela serializada". El enfoque recae enteramente en lo que el grupo ha producido. De esta manera, el catálogo global permite a cualquier visitante consultar una serie externa y descubrir todos los trabajos derivados que distintos grupos han aportado a esa misma obra.
 
-#### Categoría: `project` (Gestión de Proyectos)
-Permisos para la gestión de los proyectos de un grupo.
+**3. Tareas y Créditos**
+Cada hito o entregable (*Milestone*) se divide en tareas internas (ej. traducir el capítulo 1, limpiar imágenes, corregir estilo). El sistema permite asignar estas tareas a los miembros y, lo que es más importante, otorgar **créditos detallados** (*Contributions*) a cada persona involucrada según el rol que desempeñó (Traductor, Editor, Maquetador), asegurando el reconocimiento adecuado del esfuerzo colectivo.
 
-*   **`project.create`**: Crear un nuevo `WORK_PROJECT` dentro del grupo.
-*   **`project.edit`**: Editar los detalles (tipo, estado) de un proyecto del grupo.
-*   **`project.delete`**: Eliminar un proyecto del grupo.
+**4. Ciclo de Vida y Revisiones Internas**
+El trabajo interno de un grupo pasa por un flujo de estados claramente definido:
+*   **Planificado / Sin empezar:** El hito existe pero no se ha trabajado.
+*   **En Progreso:** Las tareas internas se están completando.
+*   **En Revisión:** El trabajo está terminado y se somete al control de calidad del grupo.
+*   **Aprobado / Listo:** El trabajo ha superado la revisión.
+*   **Requiere Correcciones:** Se detectaron errores durante la revisión que deben subsanarse.
 
-#### Categoría: `milestone` (Gestión de Hitos / Entregables)
-Permisos para planificar y gestionar las unidades de trabajo del grupo.
+**5. Visibilidad, Lanzamientos y Enlaces**
+Una vez que un hito es aprobado, se genera un Lanzamiento (*Release*). La visibilidad de un lanzamiento es de estado único y excluyente (ej. *Público*, *Privado*, *Restringido a Patreon*); si es público, no puede ser privado simultáneamente. De forma independiente a su estado de visibilidad, un lanzamiento puede tener múltiples enlaces asociados (*Release Links*) que indican dónde se aloja o consume el recurso final (un enlace a Google Drive, a un lector online, etc.).
 
-*   **`milestone.create`**: Permite definir un nuevo hito (ej. "Volumen 2") dentro de un proyecto.
-*   **`milestone.edit`**: Permite editar el título o los capítulos que componen un hito planificado.
-*   **`milestone.delete`**: Permite eliminar un hito planificado.
-*   **`milestone.submit_for_review`**: Permite enviar un hito completado al proceso de revisión.
+**6. Interacción Pública y Bucle de Retroalimentación**
+Cuando un lanzamiento adquiere estado Público, aparece en el catálogo global de ZeePubs. A partir de este momento, usuarios ajenos al grupo pueden interactuar mediante un sistema de **Comentarios**. 
+Si los lectores encuentran errores (ej. *typos*, páginas faltantes), lo reportan a través de estos comentarios. Para mantener la simplicidad de la máquina de estados, un reporte público *no cambia* el estado del lanzamiento automáticamente. En su lugar, un miembro del grupo con los permisos adecuados lee los comentarios y, si lo considera válido, abre una **Revisión Interna** para notificar al equipo exactamente qué debe corregirse. El lanzamiento pasa a un estado de "Publicado pero requiere correcciones", cerrando el bucle de retroalimentación de forma ordenada.
 
-#### Categoría: `task` (Gestión de Tareas Individuales)
-Permisos granulares sobre los `MILESTONE_TASK`, el checklist interno.
+**7. Sistema de Notificaciones**
+La plataforma cuenta con un motor de eventos que notifica a los usuarios en momentos clave: cuando se les asigna una tarea, cuando un hito en el que participaron es enviado a revisión, cuando se aprueba, cuando recibe comentarios públicos, o cuando un lanzamiento programado (ej. acceso anticipado en Patreon) cambia su estado o alcanza su fecha de expiración.
 
-*   **`task.claim`**: Permite a un miembro auto-asignarse una tarea (capítulo) de un hito.
-*   **`task.assign`**: Permite asignar una tarea a otro miembro del grupo.
-*   **`task.update_status`**: Permite marcar una tarea como 'Completada'.
-*   **`task.manage_contributions`**: Permite añadir o quitar créditos de colaboradores a una tarea específica.
+---
 
-#### Categoría: `review` (Revisión y Aprobación de Hitos)
-Permisos para el control de calidad sobre los hitos.
+### Lista de Permisos del Sistema (Scopes)
 
-*   **`review.milestone_approve`**: Permite aprobar un hito que está "En Revisión", dejándolo listo para su publicación.
-*   **`review.milestone_reject`**: Permite devolver un hito a "En Progreso", adjuntando notas de corrección.
+#### Categoría: Permisos Globales de Administración (`system`)
+Estos permisos se otorgan a nivel de cuenta (`AUTH_USER`) e impactan en toda la plataforma.
 
-#### Categoría: `release` (Publicación de Hitos)
-Permisos para gestionar la visibilidad de los hitos finalizados.
+*   **`SYSTEM_ADMIN`**: Acceso total e irrestricto a la plataforma.
+    *   `bypass_all_checks`: Omitir cualquier validación de permisos en toda la plataforma.
+    *   `prevent_self_lockout`: Evitar la remoción de este propio permiso si el usuario es el último administrador activo en la base de datos.
 
-*   **`release.milestone_public`**: Permite crear un `MILESTONE_RELEASE` de tipo "Público".
-*   **`release.milestone_private`**: Permite crear un `MILESTONE_RELEASE` de tipo "Privado" (ej. Patreon).
-*   **`release.milestone_manage`**: Permite editar o eliminar lanzamientos existentes de un hito.
+*   **`SYSTEM_MANAGE_USERS`**: Gestión de cuentas y seguridad.
+    *   `block_user`: Bloquear permanentemente el acceso a una cuenta de usuario.
+    *   `unblock_user`: Restaurar el acceso a una cuenta de usuario previamente bloqueada.
+    *   `suspend_user`: Aplicar un bloqueo temporal a una cuenta de usuario.
+    *   `force_password_change`: Cambiar la contraseña de un usuario de manera forzada.
+    *   `update_user_email`: Modificar el correo electrónico asociado a la cuenta de otro usuario.
+    *   `view_user_details`: Consultar información interna de la cuenta, como estado de verificación o intentos fallidos de inicio de sesión.
 
-#### Categoría: `notification` (Suscripciones a Notificaciones)
-Permisos que determinan qué tipo de notificaciones automáticas recibe un usuario.
+*   **`SYSTEM_MANAGE_PROFILES`**: Moderación de identidades públicas.
+    *   `edit_profile_nickname`: Modificar el apodo (nickname) de cualquier perfil público.
+    *   `edit_profile_bio`: Alterar o censurar la biografía de cualquier perfil.
+    *   `remove_profile_avatar`: Eliminar la imagen de avatar actual de cualquier perfil.
+    *   `manage_ghost_profiles`: Administrar perfiles "fantasma" que aún no tienen una cuenta de usuario vinculada.
+    *   `approve_merge_request`: Aprobar una solicitud para fusionar la historia de dos perfiles distintos.
+    *   `reject_merge_request`: Denegar una solicitud de fusión de perfiles.
 
-*   **`notification.review_pending`**: Recibe notificaciones cuando un hito es enviado a revisión en sus grupos.
-*   **`notification.release_expired`**: Recibe notificaciones cuando un lanzamiento privado de su grupo ha alcanzado su fecha de publicación.
-*   **`notification.release_ready`**: Recibe notificaciones cuando un hito en su grupo es aprobado y está listo para publicarse.
+*   **`SYSTEM_MANAGE_WORKGROUPS`**: Intervención global en grupos.
+    *   `edit_group_name`: Modificar el nombre de cualquier grupo en la plataforma.
+    *   `edit_group_description`: Modificar la descripción de cualquier grupo.
+    *   `transfer_founder`: Reasignar forzosamente quién es el miembro fundador de un grupo.
+    *   `transfer_leader`: Reasignar forzosamente quién es el líder actual de un grupo.
+    *   `delete_group`: Eliminar por completo un grupo de trabajo y todos sus datos asociados de la plataforma.
 
-#### Categoría: `comment` (Interacción Pública)
-Permisos relacionados con los comentarios en las páginas de los hitos publicados.
+#### Categoría: Permisos de Grupo de Trabajo (`group`)
+Estos permisos se otorgan a nivel de la tabla `GROUP_MEMBERSHIP` (el contexto interno de un grupo). Un usuario asume estos poderes *solo* dentro de los proyectos y miembros de ese grupo específico.
 
-*   **`comment.create`**: Permite escribir comentarios públicos en cualquier hito publicado.
-*   **`comment.edit_own`**: Permite editar los propios comentarios.
-*   **`comment.delete_own`**: Permite eliminar los propios comentarios.
-*   **`comment.delete_any`**: Permite moderar y eliminar comentarios de cualquier usuario en los proyectos del grupo.
+*   **`GROUP_MANAGE_MEMBERS`**: Administración del personal del grupo.
+    *   `edit_details`: Cambiar el nombre y la descripción del grupo de trabajo.
+    *   `add_contact_link`: Agregar nuevos enlaces sociales o de contacto al perfil del grupo.
+    *   `edit_contact_link`: Modificar los enlaces de contacto existentes del grupo.
+    *   `remove_contact_link`: Eliminar enlaces de contacto del grupo.
+    *   `invite_member`: Enviar invitaciones a nuevos usuarios para que se unan al grupo.
+    *   `remove_member`: Expulsar a un miembro actual del grupo.
+    *   `assign_permission`: Otorgar permisos locales (cualquier `GROUP_*`) a otros miembros del equipo.
+    *   `revoke_permission`: Quitar permisos locales a otros miembros del equipo.
+
+*   **`GROUP_MANAGE_PROJECTS`**: Gestión estructural del flujo de trabajo y publicaciones.
+    *   `create_project`: Iniciar un nuevo proyecto derivado (ej. comenzar a traducir una nueva novela).
+    *   `edit_project`: Modificar el tipo o el estado general de un proyecto existente.
+    *   `delete_project`: Eliminar un proyecto completo del grupo.
+    *   `create_milestone`: Planificar un nuevo hito o entregable (ej. "Volumen 1", "Capítulo 20") dentro del proyecto.
+    *   `edit_milestone`: Cambiar el título, el orden lógico o la fecha límite de un hito.
+    *   `delete_milestone`: Eliminar un hito planificado.
+    *   `publish_public_release`: Generar un lanzamiento cambiando la visibilidad de un hito a público en el catálogo.
+    *   `publish_private_release`: Generar un lanzamiento con visibilidad restringida (ej. acceso anticipado para Patreon).
+    *   `edit_release_notes`: Modificar las notas de publicación (changelog) de un lanzamiento existente.
+    *   `add_release_link`: Agregar enlaces donde los lectores pueden consumir o descargar el lanzamiento.
+    *   `edit_release_link`: Modificar una URL de un enlace de lanzamiento existente.
+    *   `remove_release_link`: Eliminar un enlace de lectura o descarga de un lanzamiento.
+
+*   **`GROUP_MANAGE_TASKS`**: Organización del esfuerzo diario.
+    *   `create_task`: Añadir nuevas tareas al checklist interno de un hito.
+    *   `edit_task`: Cambiar el nombre o el orden de una tarea en el checklist.
+    *   `delete_task`: Eliminar una tarea del checklist.
+    *   `claim_task`: Auto-asignarse una tarea que se encuentre disponible.
+    *   `assign_task`: Asignar una tarea específica a otro miembro del grupo.
+    *   `unassign_task`: Retirar a un miembro de una tarea que tenía asignada.
+    *   `update_task_progress`: Cambiar el estado de una tarea a "En progreso".
+    *   `complete_task`: Cambiar el estado de una tarea a "Completada".
+    *   `add_contribution`: Registrar el crédito de un miembro especificando el rol que cumplió en una tarea (ej. Traductor, Limpiador).
+    *   `remove_contribution`: Retirar un crédito de contribución otorgado en una tarea.
+
+*   **`GROUP_MANAGE_REVIEWS`**: Control de calidad (QC) interno.
+    *   `submit_for_review`: Tomar un hito con tareas completadas y pasarlo a la fase de control de calidad.
+    *   `approve_milestone`: Aprobar un hito que estaba en revisión, marcándolo oficialmente como listo para ser publicado.
+    *   `reject_milestone`: Rechazar un hito en revisión, devolviendo su estado a "En progreso".
+    *   `add_review_notes`: Escribir y adjuntar las notas detallando qué correcciones son necesarias en un hito rechazado.
+
+*   **`GROUP_MANAGE_COMMENTS`**: Moderación comunitaria.
+    *   `delete_external_comment`: Eliminar comentarios o reportes dejados por usuarios externos en las páginas públicas de los lanzamientos del grupo.
+    *   `hide_spoiler_comment`: Forzar a que un comentario externo quede oculto bajo una advertencia de spoiler.
+    *   *(Nota general: Las acciones `create_own_comment`, `edit_own_comment` y `delete_own_comment` son implícitas y están disponibles para cualquier usuario autenticado en el sistema).*

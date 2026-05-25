@@ -11,6 +11,7 @@ import '/features/auth/core/repositories/auth_repo.dart';
 import '/features/auth/core/use_cases/classic/create_user.dart';
 import '/features/auth/core/use_cases/classic/sign_in.dart';
 import '/features/auth/core/use_cases/classic/sign_up.dart';
+import '/features/auth/core/use_cases/classic/update_user.dart';
 import '/features/auth/core/use_cases/email_otp/finish_email_otp_sign_in.dart';
 import '/features/auth/core/use_cases/email_otp/start_email_otp_sign_in.dart';
 import '/features/auth/core/use_cases/email_verification/finish_email_verification.dart';
@@ -130,6 +131,7 @@ void setupLocator(YamlMap config) {
     // --- Flujo de Registro ---
     mediator.registerHandler<SignUpCommand, AuthSuccess, SignUpHandler>();
     mediator.registerHandler<CreateUserCommand, CreateUserResponse, CreateUserHandler>();
+    mediator.registerHandler<UpdateUserCommand, void, UpdateUserHandler>();
 
     // --- Flujos de Inicio de Sesión ---
     mediator.registerHandler<SignInCommand, AuthSuccess, SignInHandler>();
@@ -183,6 +185,7 @@ void setupLocator(YamlMap config) {
   // Auth Handlers - Flujo de Registro
   locator.registerFactory(() => SignUpHandler(locator<Transactional>(), locator<IAuthRepository>()));
   locator.registerFactory(() => CreateUserHandler(locator<Transactional>(), locator<IAuthRepository>()));
+  locator.registerFactory(() => UpdateUserHandler(locator<Transactional>(), locator<IAuthRepository>()));
 
   // Auth Handlers - Flujos de Inicio de Sesión
   locator.registerFactory(() => SignInHandler(locator<Transactional>(), locator<IAuthRepository>()));

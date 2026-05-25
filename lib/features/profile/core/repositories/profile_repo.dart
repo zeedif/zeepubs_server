@@ -14,7 +14,6 @@ abstract class IProfileRepository {
   Future<PublicProfile> updateProfile({
     required UpdateProfileCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   });
   Future<PaginatedProfilesData> getProfiles({
     required int pageSize,
@@ -26,22 +25,18 @@ abstract class IProfileRepository {
   Future<ProfileContactLink> addContactLink({
     required AddProfileContactLinkCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   });
   Future<void> removeContactLink({
     required int contactLinkId,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   });
   Future<ProfileContactLink> updateContactLink({
     required UpdateProfileContactLinkCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   });
   Future<void> reorderContactLink({
     required ReorderProfileContactLinksCommand request,
     UuidValue? enforceOwnershipId,
-    bool allowUnassociated = false,
   });
 
   // --- Fusión de Perfiles ---
