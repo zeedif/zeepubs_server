@@ -1,0 +1,14 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          sql:
+            dialects:
+              # 'make-migrations' de 'drift_dev' exige la sintaxis de SQLite para
+              #  compilar el JSON debido a la validación de schema_files.dart:
+              # `knownSql.firstWhere((e) => e.$1 == SqlDialect.sqlite)`
+              - sqlite # <- NO LO BORRES
+              - postgres
+          databases:
+            zeepubs_db: lib/common/database/database.dart

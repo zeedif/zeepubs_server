@@ -62,7 +62,7 @@ final locator = GetIt.instance;
 
 void setupLocator(YamlMap config) {
   // 1. Base de datos
-  final database = connectToDatabase();
+  final database = connectToDatabase(config);
   locator.registerSingleton<AppDatabase>(database);
   locator.registerSingleton<Transactional>(DriftTx(database));
 

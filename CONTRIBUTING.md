@@ -28,6 +28,41 @@ Al agregar código, asegúrate de colocarlo en la capa adecuada:
 
 ---
 
+## 🗄️ Gestión de Base de Datos y Migraciones (Drift)
+
+Cuando agregues nuevas tablas o modifiques columnas existentes en las clases de la **Capa Data** (`lib/features/.../data/database/`), debes documentar y generar la correspondiente migración de base de datos antes de enviar tu Pull Request.
+
+### Flujo de trabajo para cambios en el esquema:
+
+1. **Modifica o crea las tablas de Drift:**
+   Aplica los cambios necesarios en los archivos de definición de tablas dentro del módulo correspondiente de infraestructura de datos.
+
+2. **Incrementa la versión del esquema:**
+   Si modificaste una tabla existente, incrementa en uno el valor devuelto por `schemaVersion` en `lib/common/database/database.dart`:
+   ```dart
+   @override
+   int get schemaVersion => 2; // Incrementa aquí
+   ```
+
+3. **Reconstruye el código generado de soporte:**
+   Ejecuta el generador de código para actualizar las clases auxiliares de Drift:
+   ```bash
+   dart run build_runner build --delete-conflicting-outputs
+   ```
+
+4. **Genera los snapshots del esquema y los pasos de migración:**
+   Para crear el nuevo snapshot JSON en `drift_schemas/` y el esqueleto del manejador de transición en `database.steps.dart`, ejecuta:
+   ```bash
+   dart run drift_dev make-migrations
+   ```
+
+5. **Completa la lógica de migración (si es requerida):**
+   Si realizaste cambios complejos (como añadir restricciones o columnas obligatorias sin un valor por defecto), implementa la lógica específica de migración en la función generada en `database.steps.dart` para asegurar la integridad de los datos.
+
+*Nota: Todos los archivos JSON autogenerados dentro de la carpeta `drift_schemas/` deben ser incluidos y confirmados en tu commit.*
+
+---
+
 ## 📈 Flujo de Trabajo para Pull Requests
 
 Para facilitar la revisión y mantener un historial de control de versiones legible, sigue este flujo de trabajo:

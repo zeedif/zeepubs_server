@@ -7,6 +7,7 @@ import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:yaml/yaml.dart';
 
+import 'package:zeepubs_server/common/database/database.dart';
 import 'package:zeepubs_server/common/di/service_locator.dart';
 import 'package:zeepubs_server/common/grpc/auth_interceptor.dart';
 import 'package:zeepubs_server/features/auth/data/jobs/token_cleanup_job.dart';
@@ -36,6 +37,18 @@ void main(List<String> args) async {
 
   // 1. Iniciar Inyección de Dependencias
   setupLocator(mapConfig);
+
+  // 1.1 Validar conexión y ejecutar migraciones automática de Drift
+  final db = locator<AppDatabase>();
+  try {
+    print('⏳ Conectando a la base de datos y sincronizando esquemas...');
+    // Consulta que fuerza la apertura y la ejecución de la estrategia de migración interna
+    await db.customSelect('SELECT 1;').getSingle();
+    print('✅ Conexión establecida y base de datos inicializada correctamente.');
+  } catch (e) {
+    print('❌ Error crítico de conexión o inicialización de la base de datos: $e');
+    exit(1);
+  }
 
   // Iniciar el Job de Limpieza en segundo plano
   TokenCleanupJob.start();

@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
+import 'package:drift_postgres/drift_postgres.dart';
 import 'package:uuid/uuid.dart';
 
-import '/common/database/uuid_custom_type.dart';
 import '/src/generated/auth.pb.dart';
 
 /// Conversor para almacenar Sets de permisos (Scopes) como una cadena de índices enteros (ej. "1,2,21") y viceversa.
@@ -29,7 +29,7 @@ class SetScopeConverter extends TypeConverter<Set<Scope>, String> {
 /// Tabla de Usuarios
 @DataClassName('AuthUserRow')
 class AuthUsers extends Table {
-  Column<UuidValue> get id => customType(uuidCustomType).clientDefault(() => const Uuid().v4obj())();
+  Column<UuidValue> get id => customType(PgTypes.uuid).clientDefault(() => const Uuid().v4obj())();
   TextColumn get username => text().unique()();
   TextColumn get email => text().nullable().unique()();
   TextColumn get passwordHash => text().nullable()();
@@ -62,7 +62,7 @@ class EmailOtpRequests extends Table {
 @DataClassName('EmailVerificationRequestRow')
 class EmailVerificationRequests extends Table {
   IntColumn get id => integer().autoIncrement()();
-  Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
+  Column<UuidValue> get userId => customType(PgTypes.uuid).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
   TextColumn get verificationCodeHash => text()();
   TextColumn get verificationCodeSalt => text()();
   DateTimeColumn get expiresAt => dateTime()();
@@ -72,7 +72,7 @@ class EmailVerificationRequests extends Table {
 @DataClassName('PasswordResetRequestRow')
 class PasswordResetRequests extends Table {
   IntColumn get id => integer().autoIncrement()();
-  Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
+  Column<UuidValue> get userId => customType(PgTypes.uuid).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
   TextColumn get verificationCodeHash => text()();
   TextColumn get verificationCodeSalt => text()();
   DateTimeColumn get expiresAt => dateTime()();
@@ -83,8 +83,8 @@ class PasswordResetRequests extends Table {
 /// Tabla de Sesiones (SAS)
 @DataClassName('AuthSessionRow')
 class AuthSessions extends Table {
-  Column<UuidValue> get id => customType(uuidCustomType).clientDefault(() => const Uuid().v4obj())();
-  Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
+  Column<UuidValue> get id => customType(PgTypes.uuid).clientDefault(() => const Uuid().v4obj())();
+  Column<UuidValue> get userId => customType(PgTypes.uuid).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
   TextColumn get scopes => text().map(const SetScopeConverter())();
   DateTimeColumn get createdAt => dateTime().clientDefault(() => DateTime.now().toUtc())();
   DateTimeColumn get lastUsedAt => dateTime().clientDefault(() => DateTime.now().toUtc())();
@@ -109,8 +109,8 @@ class AuthSessions extends Table {
 /// Tabla para Refresh Tokens (JWT)
 @DataClassName('RefreshTokenRow')
 class RefreshTokens extends Table {
-  Column<UuidValue> get id => customType(uuidCustomType).clientDefault(() => const Uuid().v4obj())();
-  Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
+  Column<UuidValue> get id => customType(PgTypes.uuid).clientDefault(() => const Uuid().v4obj())();
+  Column<UuidValue> get userId => customType(PgTypes.uuid).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
   TextColumn get scopes => text().map(const SetScopeConverter())();
   TextColumn get method => text()();
   BlobColumn get fixedSecret => blob()();
@@ -137,7 +137,7 @@ class RefreshTokens extends Table {
 @DataClassName('OidcAccountRow')
 class OidcAccounts extends Table {
   IntColumn get id => integer().autoIncrement()();
-  Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
+  Column<UuidValue> get userId => customType(PgTypes.uuid).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
   TextColumn get issuer => text()();
   TextColumn get subject => text()();
 
@@ -159,7 +159,7 @@ class OidcStates extends Table {
 @DataClassName('PasskeyAccountRow')
 class PasskeyAccounts extends Table {
   IntColumn get id => integer().autoIncrement()();
-  Column<UuidValue> get userId => customType(uuidCustomType).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
+  Column<UuidValue> get userId => customType(PgTypes.uuid).references(AuthUsers, #id, onDelete: KeyAction.cascade)();
   BlobColumn get credentialId => blob()();
   TextColumn get credentialIdBase64 => text().unique()();
   TextColumn get publicKey => text()(); // JSON (CborMap codificado)
