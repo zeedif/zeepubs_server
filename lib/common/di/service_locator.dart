@@ -20,6 +20,7 @@ import '/features/auth/core/use_cases/passkey/finish_fido2_registration.dart';
 import '/features/auth/core/use_cases/passkey/generate_fido2_authentication_challenge.dart';
 import '/features/auth/core/use_cases/passkey/generate_fido2_registration_challenge.dart';
 import '/features/auth/core/use_cases/password_reset/finish_password_reset.dart';
+import '/features/auth/core/use_cases/password_reset/force_password_change.dart';
 import '/features/auth/core/use_cases/password_reset/start_password_reset.dart';
 import '/features/auth/core/use_cases/sessions/get_active_sessions.dart';
 import '/features/auth/core/use_cases/sessions/reauthenticate.dart';
@@ -124,6 +125,7 @@ void setupLocator(YamlMap config) {
     // --- Gestión de Contraseña y Correo ---
     mediator.registerHandler<StartPasswordResetCommand, void, StartPasswordResetHandler>();
     mediator.registerHandler<FinishPasswordResetCommand, AuthSuccess, FinishPasswordResetHandler>();
+    mediator.registerHandler<ForcePasswordChangeCommand, void, ForcePasswordChangeHandler>();
     mediator.registerHandler<StartEmailVerificationCommand, void, StartEmailVerificationHandler>();
     mediator.registerHandler<FinishEmailVerificationCommand, void, FinishEmailVerificationHandler>();
 
@@ -162,6 +164,7 @@ void setupLocator(YamlMap config) {
   // Auth Handlers - Gestión de Contraseña y Correo
   locator.registerFactory(() => StartPasswordResetHandler(locator<Transactional>(), locator<IAuthRepository>()));
   locator.registerFactory(() => FinishPasswordResetHandler(locator<Transactional>(), locator<IAuthRepository>()));
+  locator.registerFactory(() => ForcePasswordChangeHandler(locator<Transactional>(), locator<IAuthRepository>()));
   locator.registerFactory(() => StartEmailVerificationHandler(locator<Transactional>(), locator<IAuthRepository>()));
   locator.registerFactory(() => FinishEmailVerificationHandler(locator<Transactional>(), locator<IAuthRepository>()));
 

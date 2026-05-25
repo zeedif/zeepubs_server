@@ -9,7 +9,6 @@ import '/common/utils/request_scope.dart';
 import '/src/generated/auth.pbgrpc.dart';
 
 import '../core/exceptions/auth_exceptions.dart';
-import '../core/repositories/auth_repo.dart';
 import '../core/use_cases/classic/create_user.dart';
 import '../core/use_cases/classic/sign_in.dart';
 import '../core/use_cases/classic/sign_up.dart';
@@ -23,6 +22,7 @@ import '../core/use_cases/passkey/finish_fido2_registration.dart';
 import '../core/use_cases/passkey/generate_fido2_authentication_challenge.dart';
 import '../core/use_cases/passkey/generate_fido2_registration_challenge.dart';
 import '../core/use_cases/password_reset/finish_password_reset.dart';
+import '../core/use_cases/password_reset/force_password_change.dart';
 import '../core/use_cases/password_reset/start_password_reset.dart';
 import '../core/use_cases/sessions/get_active_sessions.dart';
 import '../core/use_cases/sessions/reauthenticate.dart';
@@ -359,11 +359,11 @@ class AuthServiceImpl extends AuthServiceBase {
   Future<EmptyResponse> forcePasswordChange(ServiceCall call, ForcePasswordChangeRequest request) async {
     return withRequestScope(call, () async {
       try {
-        // TODO: Crear un caso de uso y eliminar la dependencia al repositorio.
-        await locator<IAuthRepository>().forcePasswordChange(
+        final command = ForcePasswordChangeCommand(
           authUserId: UuidValue.fromString(request.authUserId),
           newPassword: request.newPassword,
         );
+        await locator<Mediator>().send(command);
         return EmptyResponse();
       } catch (e, stack) {
         throw _mapExceptionToGrpcError(e, stack);
