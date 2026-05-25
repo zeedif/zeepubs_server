@@ -1,0 +1,30 @@
+{
+    "dartimportsorter.sortOnSave": true,
+    "dartimportsorter.leaveEmptyLinesBetweenGroups": true,
+    "dartimportsorter.matchingRules": [
+        {
+            "label": "1. Imports internos de Dart",
+            "regex": "^dart:.*$",
+            "order": 1,
+            "regexFlags": ["m"]
+        },
+        {
+            "label": "2. Packages externos (pub.dev)",
+            "regex": "^package:(?!<app_name>).*$",
+            "order": 2,
+            "regexFlags": ["m"]
+        },
+        {
+            "label": "3. Proyecto base (package: o /)",
+            "regex": "^package:<app_name>.*|^/.*$",
+            "order": 3,
+            "regexFlags": ["m"]
+        },
+        {
+            "label": "4. Locales relativos (./, ../, o directos)",
+            "regex": ".*",
+            "order": 4,
+            "regexFlags": ["m"]
+        }
+    ]
+}

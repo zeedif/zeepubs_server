@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    // Dart language support, diagnostics, and debugging for the backend.
+    "dart-code.dart-code",
+
+    // Color-coded annotation highlighting for TODOs, alerts, and queries.
+    "aaron-bond.better-comments",
+
+    // Automatically sorts and organizes Dart import groups in source files.
+    "aziznal.dart-import-sorter",
+
+    // Quickly search, add, and update dependencies in the pubspec.yaml.
+    "jeroen-meijer.pubspec-assist",
+
+    // Syntax highlighting, navigation, and diagnostics for Proto files.
+    "drblury.protobuf-vsc",
+
+    // Renders Mermaid diagrams within the built-in Markdown preview.
+    "bierner.markdown-mermaid"
+  ]
+}

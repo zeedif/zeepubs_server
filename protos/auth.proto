@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package zeepubs.auth;
+
+import "google/protobuf/timestamp.proto";
+
+// --- Enumeraciones ---
+enum AuthStrategy {
+  UNKNOWN = 0;
+  JWT = 1;
+  SESSION = 2;
+}
+
+enum Scope {
+  UNKNOWN_SCOPE = 0;
+  SYSTEM_MANAGE_USERS = 1;
+  SYSTEM_MANAGE_PROFILES = 2;
+  SYSTEM_ASSIGN_PERMISSIONS = 3;
+  SYSTEM_MANAGE_WORKGROUPS = 4;
+  WORKGROUP_CREATE = 5;
+  WORKGROUP_EDIT_DETAILS = 6;
+  WORKGROUP_ASSIGN_PERMISSIONS = 7;
+  WORKGROUP_INVITE_MEMBERS = 8;
+  WORKGROUP_REMOVE_MEMBERS = 9;
+  WORKGROUP_DELETE = 10;
+  PROJECT_CREATE = 11;
+  PROJECT_EDIT = 12;
+  PROJECT_DELETE = 13;
+  MILESTONE_CREATE = 14;
+  MILESTONE_EDIT = 15;
+  MILESTONE_DELETE = 16;
+  TASK_CLAIM = 17;
+  TASK_ASSIGN = 18;
+  REVIEW_MILESTONE_APPROVE = 19;
+  RELEASE_MILESTONE_PUBLIC = 20;
+  PROFILE_EDIT_UNASSOCIATED = 21;
+}
+
+// --- Objetos de Dominio ---
+message AuthSuccess {
+  string auth_strategy = 1;
+  string token = 2;
+  optional string refresh_token = 3;
+  string user_id = 4;
+  repeated int32 scope_ids = 5;
+}
+
+message ActiveSession {
+  string token_id = 1;
+  string client_name = 2;
+  string client_type = 3;
+  string ip_address = 4;
+  google.protobuf.Timestamp created_at = 5;
+  optional google.protobuf.Timestamp last_used_at = 6;
+  bool is_current = 7;
+}
+
+// --- FLUJO DE REGISTRO (SIGN UP) ---
+
+message SignUpRequest {
+  string username = 1;
+  optional string email = 2;
+  optional string password = 3;
+  AuthStrategy strategy = 4;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  optional string email = 2;
+  optional string password = 3;
+}
+
+message CreateUserResponse {
+  string user_id = 1; // UUID string
+}
+
+// --- FLUJOS DE INICIO DE SESIÓN (SIGN IN) ---
+
+message SignInRequest {
+  string user_or_email = 1;
+  string password = 2;
+  AuthStrategy strategy = 3;
+}
+
+message StartEmailOtpSignInRequest {
+  string email = 1;
+}
+
+message FinishEmailOtpSignInRequest {
+  string email = 1;
+  string otp = 2;
+  AuthStrategy strategy = 3;
+}
+
+message SignInWithOidcRequest {
+  string issuer = 1;
+  string subject = 2;
+  optional string email = 3;
+  optional string nickname = 4;
+  optional string avatar_url = 5;
+  AuthStrategy strategy = 6;
+}
+
+// --- FLUJOS DE PASSKEY (FIDO2) ---
+
+message GenerateFido2RegistrationChallengeRequest {
+  string username = 1;
+}
+
+message Fido2ChallengeResponse {
+  string challenge = 1;
+  int32 challenge_id = 2;
+}
+
+message FinishFido2RegistrationRequest {
+  int32 challenge_id = 1;
+  string attestation_object = 2; // base64url
+  string client_data_json = 3; // base64url
+}
+
+message FinishFido2AuthenticationRequest {
+  int32 challenge_id = 1;
+  string credential_id = 2; // base64url
+  string authenticator_data = 3; // base64url
+  string client_data_json = 4; // base64url
+  string signature = 5; // base64url
+  AuthStrategy strategy = 6;
+}
+
+// --- GESTIÓN DE CONTRASEÑA Y CORREO ---
+
+message StartPasswordResetRequest {
+  string email = 1;
+}
+
+message FinishPasswordResetRequest {
+  int32 request_id = 1;
+  string verification_code = 2;
+  string new_password = 3;
+  AuthStrategy strategy = 4;
+}
+
+message ForcePasswordChangeRequest {
+  string auth_user_id = 1; // UUID string
+  string new_password = 2;
+}
+
+message FinishEmailVerificationRequest {
+  int32 request_id = 1;
+  string verification_code = 2;
+}
+
+// ==========================================================
+// --- GESTIÓN DE SESIONES Y SEGURIDAD (STEP-UP) ---
+// ==========================================================
+
+message ActiveSessionsResponse {
+  repeated ActiveSession sessions = 1;
+}
+
+message ReauthenticateRequest {
+  string password = 1;
+}
+
+message SignOutOtherDeviceRequest {
+  string target_token_id = 1;
+}
+
+message SignOutAllDevicesRequest {
+  string auth_user_id = 1; // UUID string
+}
+
+message EmptyResponse {}
+
+// --- Definición del Servicio ---
+service AuthService {
+  // --- Flujo de Registro ---
+  rpc SignUp(SignUpRequest) returns (AuthSuccess);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // --- Flujos de Inicio de Sesión ---
+  rpc SignIn(SignInRequest) returns (AuthSuccess);
+  rpc StartEmailOtpSignIn(StartEmailOtpSignInRequest) returns (EmptyResponse);
+  rpc FinishEmailOtpSignIn(FinishEmailOtpSignInRequest) returns (AuthSuccess);
+  rpc SignInWithOidc(SignInWithOidcRequest) returns (AuthSuccess);
+
+  // --- Flujos de Passkey (FIDO2) ---
+  rpc GenerateFido2RegistrationChallenge(GenerateFido2RegistrationChallengeRequest) returns (Fido2ChallengeResponse);
+  rpc FinishFido2Registration(FinishFido2RegistrationRequest) returns (EmptyResponse);
+  rpc GenerateFido2AuthenticationChallenge(EmptyResponse) returns (Fido2ChallengeResponse);
+  rpc FinishFido2Authentication(FinishFido2AuthenticationRequest) returns (AuthSuccess);
+
+  // --- Gestión de Contraseña y Correo ---
+  rpc StartPasswordReset(StartPasswordResetRequest) returns (EmptyResponse);
+  rpc FinishPasswordReset(FinishPasswordResetRequest) returns (AuthSuccess);
+  rpc ForcePasswordChange(ForcePasswordChangeRequest) returns (EmptyResponse);
+  rpc StartEmailVerification(EmptyResponse) returns (EmptyResponse);
+  rpc FinishEmailVerification(FinishEmailVerificationRequest) returns (EmptyResponse);
+
+  // --- Gestión de Sesiones y Seguridad (Step-Up) ---
+  rpc GetActiveSessions(EmptyResponse) returns (ActiveSessionsResponse);
+  rpc Reauthenticate(ReauthenticateRequest) returns (EmptyResponse);
+  rpc SignOutDevice(EmptyResponse) returns (EmptyResponse);
+  rpc SignOutOtherDevice(SignOutOtherDeviceRequest) returns (EmptyResponse);
+  rpc SignOutAllDevices(SignOutAllDevicesRequest) returns (EmptyResponse);
+  rpc SignOutAllOtherDevices(EmptyResponse) returns (EmptyResponse);
+}

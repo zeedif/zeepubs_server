@@ -1,0 +1,60 @@
+{
+  // --- Excepciones de Autenticación y Credenciales de Acceso ---
+  "auth.invalid_credentials": "Invalid credentials.",
+  "auth.user_not_found": "User not found.",
+  "auth.account_locked": "Account locked until %1$s.",
+  "auth.user_blocked": "User account blocked.",
+  "auth.access_denied": "Access denied.",
+  "auth.reauthentication_required": "Sensitive operation. Reauthentication required.",
+
+  // --- Excepciones de Registro y Alta de Usuarios ---
+  "auth.username_in_use": "Username already taken.",
+  "auth.email_in_use": "Email address already registered.",
+  "auth.public_signup_disabled": "Public registration disabled.",
+  "auth.registration_credentials_required": "Valid credentials required for registration.",
+
+  // --- Excepciones de Verificación de Cuentas ---
+  "auth.email_verification_required": "Email verification required.",
+  "auth.verification_failed": "Verification failed or token invalid.",
+  "auth.no_email_to_verify": "No pending email to verify.",
+
+  // --- Excepciones de Autenticación Externa / OIDC ---
+  "auth.oidc_not_configured": "OIDC provider not configured.",
+  "auth.oidc_signin_disabled": "External provider sign-in disabled.",
+  "auth.oidc_signup_disabled": "External provider registration disabled.",
+  "auth.oidc_user_not_found": "No local account linked to external provider.",
+
+  // --- Excepciones de MFA, OTP y Seguridad FIDO2/Passkeys ---
+  "auth.otp_signin_disabled": "OTP sign-in disabled.",
+  "auth.invalid_otp": "OTP invalid or expired.",
+  "auth.fido2_not_configured": "FIDO2 authentication not configured.",
+  "auth.passkey_registration_disabled": "Passkey registration disabled.",
+  "auth.passkey_signin_disabled": "Passkey sign-in disabled.",
+  "auth.expired_or_invalid_challenge": "Security challenge expired or invalid.",
+
+  // --- Excepciones de Sesiones y Ciclo de Vida de Tokens ---
+  "auth.refresh_token_invalid": "Invalid or inactive session token.",
+  "auth.refresh_token_expired": "Session expired.",
+  "auth.refresh_token_compromised": "Session security compromise detected.",
+
+  // --- Excepciones del Dominio de Perfil ---
+  "profile.not_found": "User profile not found.",
+
+  // --- Contexto de Metadatos de Dispositivos (Clientes) ---
+  "client.name_unknown": "Unknown Client",
+  "client.name_browser": "Web Browser",
+  "client.name_chrome": "Google Chrome",
+  "client.name_firefox": "Mozilla Firefox",
+  "client.name_safari": "Apple Safari",
+  "client.name_edge": "Microsoft Edge",
+  "client.name_postman": "Postman Client",
+  "client.name_mobile_app": "Mobile Application",
+
+  "client.type_desktop": "Desktop",
+  "client.type_mobile": "Mobile",
+  "client.type_tablet": "Tablet",
+  "client.type_unknown": "Unknown Device",
+
+  // --- Contexto Común / General ---
+  "common.generic_internal_error": "Internal server error."
+}

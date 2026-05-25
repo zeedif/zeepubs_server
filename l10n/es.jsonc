@@ -1,0 +1,60 @@
+{
+  // --- Excepciones de Autenticación y Credenciales de Acceso ---
+  "auth.invalid_credentials": "Credenciales inválidas.",
+  "auth.user_not_found": "Usuario no encontrado.",
+  "auth.account_locked": "Cuenta bloqueada hasta %1$s.",
+  "auth.user_blocked": "Cuenta de usuario bloqueada.",
+  "auth.access_denied": "Acceso denegado.",
+  "auth.reauthentication_required": "Operación sensible. Re-autenticación requerida.",
+
+  // --- Excepciones de Registro y Alta de Usuarios ---
+  "auth.username_in_use": "Nombre de usuario no disponible.",
+  "auth.email_in_use": "Correo electrónico ya registrado.",
+  "auth.public_signup_disabled": "Registro público deshabilitado.",
+  "auth.registration_credentials_required": "Credenciales válidas requeridas para el registro.",
+
+  // --- Excepciones de Verificación de Cuentas ---
+  "auth.email_verification_required": "Verificación de correo requerida.",
+  "auth.verification_failed": "Verificación fallida o token inválido.",
+  "auth.no_email_to_verify": "Sin correo pendiente de verificación.",
+
+  // --- Excepciones de Autenticación Externa / OIDC ---
+  "auth.oidc_not_configured": "Proveedor OIDC no configurado.",
+  "auth.oidc_signin_disabled": "Inicio de sesión con proveedor externo deshabilitado.",
+  "auth.oidc_signup_disabled": "Registro con proveedor externo deshabilitado.",
+  "auth.oidc_user_not_found": "Ninguna cuenta local vinculada al proveedor externo.",
+
+  // --- Excepciones de MFA, OTP y Seguridad FIDO2/Passkeys ---
+  "auth.otp_signin_disabled": "Inicio de sesión OTP deshabilitado.",
+  "auth.invalid_otp": "Código OTP inválido o expirado.",
+  "auth.fido2_not_configured": "Autenticación FIDO2 no configurada.",
+  "auth.passkey_registration_disabled": "Registro de Passkey deshabilitado.",
+  "auth.passkey_signin_disabled": "Inicio de sesión con Passkey deshabilitado.",
+  "auth.expired_or_invalid_challenge": "Desafío de seguridad expirado o inválido.",
+
+  // --- Excepciones de Sesiones y Ciclo de Vida de Tokens ---
+  "auth.refresh_token_invalid": "Token de sesión inválido o inactivo.",
+  "auth.refresh_token_expired": "Sesión expirada.",
+  "auth.refresh_token_compromised": "Compromiso de seguridad de sesión detectado.",
+
+  // --- Excepciones del Dominio de Perfil ---
+  "profile.not_found": "Perfil de usuario no encontrado.",
+
+  // --- Contexto de Metadatos de Dispositivos (Clientes) ---
+  "client.name_unknown": "Cliente Desconocido",
+  "client.name_browser": "Navegador Web",
+  "client.name_chrome": "Google Chrome",
+  "client.name_firefox": "Mozilla Firefox",
+  "client.name_safari": "Apple Safari",
+  "client.name_edge": "Microsoft Edge",
+  "client.name_postman": "Cliente Postman",
+  "client.name_mobile_app": "Aplicación Móvil",
+
+  "client.type_desktop": "Escritorio",
+  "client.type_mobile": "Móvil",
+  "client.type_tablet": "Tableta",
+  "client.type_unknown": "Dispositivo Desconocido",
+
+  // --- Contexto Común / General ---
+  "common.generic_internal_error": "Error interno del servidor."
+}
