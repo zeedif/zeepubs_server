@@ -82,7 +82,32 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<AuthSuccess> signUp({required SignUpCommand request, required AuthStrategy strategy}) async {
-    // 1. Validar configuración de registro público
+    // 1. Detectar si este es el primer usuario en el sistema
+    final firstUserCheck = await (_db.select(_db.authUsers)..limit(1)).getSingleOrNull();
+    final isFirstUser = firstUserCheck == null;
+
+    if (isFirstUser) {
+      // Asignar los scopes de gestión de sistema
+      final adminScopes = {
+        Scope.SYSTEM_MANAGE_USERS,
+        Scope.SYSTEM_MANAGE_PROFILES,
+        Scope.SYSTEM_ASSIGN_PERMISSIONS,
+        Scope.SYSTEM_MANAGE_WORKGROUPS,
+      };
+
+      final newUser = await _createUserEntities(
+        username: request.username,
+        email: request.email,
+        password: request.password,
+        emailIsVerified: true,
+        initialScopes: adminScopes,
+      );
+
+      // Retornar token
+      return await _createToken(newUser.id, 'classic_first_user_signup', newUser.scopes, strategy);
+    }
+
+    // 2. Validar configuración de registro público
     if (request.email != null && !_config.publicEmailSignupEnabled) {
       throw const PublicSignupDisabledException();
     }
@@ -93,20 +118,21 @@ class AuthRepositoryImpl implements IAuthRepository {
       throw const RegistrationCredentialsRequiredException();
     }
 
-    // 2. Crear entidades de usuario
+    // 3. Crear entidades de usuario regular
     final newUser = await _createUserEntities(
       username: request.username,
       email: request.email,
       password: request.password,
       emailIsVerified: !_config.requireEmailVerification,
+      initialScopes: {},
     );
 
-    // 3. Evaluar verificación de correo
+    // 4. Evaluar verificación de correo
     if (_config.requireEmailVerification && request.email != null) {
       await _startEmailVerificationInternal(authUserId: newUser.id);
       throw const EmailVerificationRequiredException();
     } else {
-      // 4. Retornar token
+      // 5. Retornar token
       return await _createToken(newUser.id, 'classic_signup', newUser.scopes, strategy);
     }
   }
@@ -118,6 +144,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       email: request.email,
       password: request.password,
       emailIsVerified: false,
+      initialScopes: {},
     );
     return CreateUserResponse(userId: newUser.id.toString());
   }
@@ -128,6 +155,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     String? email,
     String? password,
     required bool emailIsVerified,
+    required Set<Scope> initialScopes,
   }) async {
     final normalizedEmail = email?.toLowerCase();
 
@@ -154,7 +182,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       passwordHash: Value(passwordHash),
       passwordSalt: Value(passwordSalt),
       emailVerifiedAt: Value(emailIsVerified ? DateTime.now().toUtc() : null),
-      scopes: {},
+      scopes: initialScopes,
     ));
 
     await _db.into(_db.publicProfiles).insert(PublicProfilesCompanion.insert(
