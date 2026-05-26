@@ -41,6 +41,7 @@ class AuthUsers extends Table {
   DateTimeColumn get createdAt => dateTime().clientDefault(() => DateTime.now().toUtc())();
   IntColumn get failedAttempts => integer().withDefault(const Constant(0))();
   DateTimeColumn get lockedUntil => dateTime().nullable()();
+  DateTimeColumn get lastActiveAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

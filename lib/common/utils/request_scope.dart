@@ -2,6 +2,7 @@ import 'package:grpc/grpc.dart';
 import 'package:uuid/uuid.dart';
 
 import '/common/di/service_locator.dart';
+import '/features/profile/data/services/active_user_tracker.dart';
 import '/src/generated/auth.pb.dart';
 
 import '../database/database.dart';
@@ -66,6 +67,11 @@ Future<T> withRequestScope<T>(ServiceCall call, Future<T> Function() computation
     locator.registerSingleton<AppSession>(session);
 
     session.log('Starting gRPC request scope', level: LogLevel.debug);
+
+    // Rastrear actividad usando el RateLimiter interno
+    if (authInfo != null && locator.isRegistered<ActiveUserTracker>()) {
+      locator<ActiveUserTracker>().recordActive(authInfo.userId);
+    }
 
     // 5. Ejecutar Mediator / Use Case
     return await computation();

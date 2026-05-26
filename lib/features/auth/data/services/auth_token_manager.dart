@@ -80,8 +80,8 @@ class AuthTokenManager {
       return null;
     }
 
-    // Actualiza el timestamp si pasó más de un minuto
-    if (now.difference(sessionRow.lastUsedAt).inMinutes >= 1) {
+    // Actualiza el timestamp si pasó más de 3 minutos del registro de sesión actual
+    if (now.difference(sessionRow.lastUsedAt).inMinutes >= 3) {
       await (_db.update(_db.authSessions)..where((t) => t.id.equals(sessionRow.id)))
           .write(AuthSessionsCompanion(lastUsedAt: Value(now)));
     }

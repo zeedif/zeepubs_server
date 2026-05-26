@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:grpc/grpc.dart' as grpc;
@@ -10,9 +11,13 @@ import 'package:yaml/yaml.dart';
 import 'package:zeepubs_server/common/database/database.dart';
 import 'package:zeepubs_server/common/di/service_locator.dart';
 import 'package:zeepubs_server/common/grpc/auth_interceptor.dart';
+import 'package:zeepubs_server/common/grpc/rate_limit_interceptor.dart';
+import 'package:zeepubs_server/common/http/rate_limit_middleware.dart';
+import 'package:zeepubs_server/common/security/rate_limit_registry.dart';
 import 'package:zeepubs_server/features/auth/data/jobs/token_cleanup_job.dart';
 import 'package:zeepubs_server/features/auth/presentation/auth_service_impl.dart';
 import 'package:zeepubs_server/features/auth/presentation/oidc_controller.dart';
+import 'package:zeepubs_server/features/profile/data/services/active_user_tracker.dart';
 import 'package:zeepubs_server/features/profile/presentation/profile_service_impl.dart';
 
 import 'generate_l10n.dart';
@@ -53,13 +58,27 @@ void main(List<String> args) async {
   // Iniciar el Job de Limpieza en segundo plano
   TokenCleanupJob.start();
 
+  // Iniciar el Timer del ActiveUserTracker (ejecuta el flush cada 5 minutos)
+  Timer.periodic(const Duration(minutes: 5), (_) async {
+    final tracker = locator<ActiveUserTracker>();
+    await tracker.flush();
+
+    // De paso, limpiamos los buckets inactivos del RateLimiter para ahorrar memoria
+    final registry = locator<RateLimitRegistry>();
+    registry.getLimiter(RateLimitPolicy.apiGlobal).cleanup(const Duration(hours: 1));
+    registry.getLimiter(RateLimitPolicy.authentication).cleanup(const Duration(hours: 1));
+  });
+
   // 2. Levantar Servidor gRPC (Puerto 8080)
   final grpcServer = grpc.Server.create(
     services: [
       AuthServiceImpl(),
       ProfileServiceImpl(),
     ],
-    interceptors: [authInterceptor],
+    interceptors: [
+      rateLimitInterceptor,
+      authInterceptor,
+    ],
   );
 
   await grpcServer.serve(port: 8080);
@@ -70,8 +89,12 @@ void main(List<String> args) async {
 
   app.mount('/oidc', OidcController().router.call);
 
-  // Pipeline con CORS y Logs para la web
-  final handler = Pipeline().addMiddleware(corsHeaders()).addMiddleware(logRequests()).addHandler(app.call);
+  // Pipeline con CORS, Rate Limiter y Logs para las peticiones HTTP
+  final handler = Pipeline()
+      .addMiddleware(corsHeaders())
+      .addMiddleware(rateLimitMiddleware())
+      .addMiddleware(logRequests())
+      .addHandler(app.call);
 
   final httpServer = await shelf_io.serve(
     handler,
